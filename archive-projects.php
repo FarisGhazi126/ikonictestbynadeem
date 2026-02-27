@@ -1,18 +1,16 @@
 <?php get_header(); ?>
-
-<main>
-    <h1>Our Projects</h1>
-    <?php if (have_posts()) : ?>
-        <?php while (have_posts()) : the_post(); ?>
-            <article class="project">
+<main class="container section">
+    <h1><?php post_type_archive_title(); ?></h1>
+    <div class="grid">
+        <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+            <article class="card">
                 <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
-                <p><strong>Start Date:</strong> <?php echo get_post_meta(get_the_ID(), 'project_start_date', true); ?></p>
-                <p><strong>End Date:</strong> <?php echo get_post_meta(get_the_ID(), 'project_end_date', true); ?></p>
+                <p><?php echo esc_html(get_post_meta(get_the_ID(), 'project_description', true)); ?></p>
+                <p><strong><?php esc_html_e('Start:', 'ikonic-test'); ?></strong> <?php echo esc_html(get_post_meta(get_the_ID(), 'project_start_date', true)); ?></p>
             </article>
-        <?php endwhile; ?>
-    <?php else : ?>
-        <p>No projects found.</p>
-    <?php endif; ?>
+        <?php endwhile; else : ?>
+            <p><?php esc_html_e('No projects found.', 'ikonic-test'); ?></p>
+        <?php endif; ?>
+    </div>
 </main>
-
 <?php get_footer(); ?>
