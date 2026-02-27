@@ -11,6 +11,12 @@ if (!defined('ABSPATH')) {
 </head>
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
+<div class="topbar">
+    <div class="container topbar-inner">
+        <p><?php esc_html_e('Mon - Sat: 8:00 am - 7:00 pm', 'ikonic-test'); ?></p>
+        <p><?php esc_html_e('Call us: +1 (307) 555-0133', 'ikonic-test'); ?></p>
+    </div>
+</div>
 <header class="site-header">
     <div class="container header-wrap">
         <a class="site-brand" href="<?php echo esc_url(home_url('/')); ?>"><?php bloginfo('name'); ?></a>
@@ -26,5 +32,6 @@ if (!defined('ABSPATH')) {
             );
             ?>
         </nav>
+        <a class="header-btn" href="#contact"><?php esc_html_e('Get a Quote', 'ikonic-test'); ?></a>
     </div>
 </header>

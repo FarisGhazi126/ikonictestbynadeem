@@ -18,7 +18,8 @@ function ikonic_theme_setup() {
 add_action('after_setup_theme', 'ikonic_theme_setup');
 
 function ikonic_enqueue_assets() {
-    wp_enqueue_style('ikonic-theme-style', get_stylesheet_uri(), array(), '1.0.0');
+    wp_enqueue_style('ikonic-google-fonts', 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Poppins:wght@500;600;700;800&display=swap', array(), null);
+    wp_enqueue_style('ikonic-theme-style', get_stylesheet_uri(), array('ikonic-google-fonts'), '1.1.0');
 }
 add_action('wp_enqueue_scripts', 'ikonic_enqueue_assets');
 
