@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ikonic Contact SMTP Form
  * Description: Advanced contact form builder with drag-and-drop fields, analytics, and SMTP delivery.
- * Version: 4.0.0
+ * Version: 4.1.0
  * Author: Ikonic
  * Text Domain: ikonic-contact-smtp-form
  */
@@ -30,6 +30,10 @@ final class Ikonic_Contact_SMTP_Form {
         add_action('admin_post_icsf_save_form', [$this, 'handle_save_form']);
         add_action('admin_post_icsf_delete_form', [$this, 'handle_delete_form']);
         add_action('admin_post_icsf_export_logs', [$this, 'handle_export_logs']);
+        add_action('admin_post_icsf_export_bundle', [$this, 'handle_export_bundle']);
+        add_action('admin_post_icsf_import_bundle', [$this, 'handle_import_bundle']);
+        add_action('admin_post_icsf_reset_plugin_data', [$this, 'handle_reset_plugin_data']);
+        add_action('admin_post_icsf_send_test_email', [$this, 'handle_send_test_email']);
 
         add_action('phpmailer_init', [$this, 'configure_phpmailer']);
     }
@@ -48,10 +52,11 @@ final class Ikonic_Contact_SMTP_Form {
         add_submenu_page('ikonic-contact-form-builder', __('Forms', 'ikonic-contact-smtp-form'), __('Forms', 'ikonic-contact-smtp-form'), 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page']);
         add_submenu_page('ikonic-contact-form-builder', __('Analytics', 'ikonic-contact-smtp-form'), __('Analytics', 'ikonic-contact-smtp-form'), 'manage_options', 'ikonic-contact-analytics', [$this, 'render_analytics_page']);
         add_submenu_page('ikonic-contact-form-builder', __('SMTP Settings', 'ikonic-contact-smtp-form'), __('SMTP Settings', 'ikonic-contact-smtp-form'), 'manage_options', 'ikonic-contact-smtp-settings', [$this, 'render_smtp_settings_page']);
+        add_submenu_page('ikonic-contact-form-builder', __('Automation & Tools', 'ikonic-contact-smtp-form'), __('Automation & Tools', 'ikonic-contact-smtp-form'), 'manage_options', 'ikonic-contact-tools', [$this, 'render_tools_page']);
     }
 
     public function enqueue_admin_assets(string $hook): void {
-        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics'];
+        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-tools'];
         if (!in_array($hook, $allowed, true)) {
             return;
         }
@@ -264,6 +269,60 @@ CSS;
         <?php
     }
 
+    public function render_tools_page(): void {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $smtp = $this->get_smtp_settings();
+        $forms = $this->get_forms();
+        $logs = $this->get_logs();
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Automation & Tools', 'ikonic-contact-smtp-form'); ?></h1>
+            <p><?php esc_html_e('Advanced plugin operations for backup, migration, test delivery and maintenance.', 'ikonic-contact-smtp-form'); ?></p>
+
+            <h2><?php esc_html_e('SMTP Health Check', 'ikonic-contact-smtp-form'); ?></h2>
+            <ul style="list-style:disc;padding-left:20px;">
+                <li><?php echo !empty($smtp['enable_smtp']) ? '✅ ' . esc_html__('SMTP is enabled', 'ikonic-contact-smtp-form') : '⚠️ ' . esc_html__('SMTP is disabled', 'ikonic-contact-smtp-form'); ?></li>
+                <li><?php echo !empty($smtp['smtp_host']) ? '✅ ' . esc_html__('SMTP host configured', 'ikonic-contact-smtp-form') : '⚠️ ' . esc_html__('SMTP host missing', 'ikonic-contact-smtp-form'); ?></li>
+                <li><?php echo !empty($smtp['from_email']) ? '✅ ' . esc_html__('From email configured', 'ikonic-contact-smtp-form') : '⚠️ ' . esc_html__('From email missing', 'ikonic-contact-smtp-form'); ?></li>
+                <li><?php echo is_email($smtp['to_email']) ? '✅ ' . esc_html__('Default recipient is valid', 'ikonic-contact-smtp-form') : '⚠️ ' . esc_html__('Default recipient is invalid', 'ikonic-contact-smtp-form'); ?></li>
+            </ul>
+
+            <h2><?php esc_html_e('Send Test Email', 'ikonic-contact-smtp-form'); ?></h2>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="icsf_send_test_email" />
+                <?php wp_nonce_field(self::ADMIN_NONCE_ACTION, 'icsf_admin_nonce'); ?>
+                <input type="email" name="test_email" class="regular-text" value="<?php echo esc_attr(get_option('admin_email')); ?>" required />
+                <button type="submit" class="button button-primary"><?php esc_html_e('Send Test', 'ikonic-contact-smtp-form'); ?></button>
+            </form>
+
+            <h2><?php esc_html_e('Backup & Migration', 'ikonic-contact-smtp-form'); ?></h2>
+            <p><?php echo esc_html(sprintf(__('Forms: %1$d | Logs: %2$d', 'ikonic-contact-smtp-form'), count($forms), count($logs))); ?></p>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:12px;">
+                <input type="hidden" name="action" value="icsf_export_bundle" />
+                <?php wp_nonce_field(self::ADMIN_NONCE_ACTION, 'icsf_admin_nonce'); ?>
+                <button type="submit" class="button"><?php esc_html_e('Export Plugin Bundle (JSON)', 'ikonic-contact-smtp-form'); ?></button>
+            </form>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data" style="margin-top:12px;">
+                <input type="hidden" name="action" value="icsf_import_bundle" />
+                <?php wp_nonce_field(self::ADMIN_NONCE_ACTION, 'icsf_admin_nonce'); ?>
+                <input type="file" name="icsf_bundle" accept="application/json" required />
+                <button type="submit" class="button"><?php esc_html_e('Import Bundle', 'ikonic-contact-smtp-form'); ?></button>
+            </form>
+
+            <h2><?php esc_html_e('Danger Zone', 'ikonic-contact-smtp-form'); ?></h2>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('<?php echo esc_js(__('This will remove all plugin forms/logs/settings. Continue?', 'ikonic-contact-smtp-form')); ?>');">
+                <input type="hidden" name="action" value="icsf_reset_plugin_data" />
+                <?php wp_nonce_field(self::ADMIN_NONCE_ACTION, 'icsf_admin_nonce'); ?>
+                <button type="submit" class="button button-secondary"><?php esc_html_e('Reset Plugin Data', 'ikonic-contact-smtp-form'); ?></button>
+            </form>
+        </div>
+        <?php
+    }
+
     public function render_analytics_page(): void {
         if (!current_user_can('manage_options')) {
             return;
@@ -433,6 +492,100 @@ CSS;
         exit;
     }
 
+    public function handle_export_bundle(): void {
+        if (!$this->verify_admin_request()) {
+            return;
+        }
+
+        $bundle = [
+            'version' => '4.1.0',
+            'exported_at' => current_time('mysql'),
+            'forms' => $this->get_forms(),
+            'smtp' => $this->get_smtp_settings(),
+            'logs' => $this->get_logs(),
+        ];
+
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename=icsf-plugin-bundle.json');
+        echo wp_json_encode($bundle);
+        exit;
+    }
+
+    public function handle_import_bundle(): void {
+        if (!$this->verify_admin_request()) {
+            return;
+        }
+
+        if (empty($_FILES['icsf_bundle']['tmp_name'])) {
+            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+            exit;
+        }
+
+        $raw = file_get_contents($_FILES['icsf_bundle']['tmp_name']);
+        $decoded = json_decode((string) $raw, true);
+        if (!is_array($decoded)) {
+            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+            exit;
+        }
+
+        if (isset($decoded['forms']) && is_array($decoded['forms'])) {
+            update_option(self::FORMS_OPTION_KEY, $decoded['forms']);
+        }
+        if (isset($decoded['smtp']) && is_array($decoded['smtp'])) {
+            update_option(self::SMTP_OPTION_KEY, $this->sanitize_smtp_settings($decoded['smtp']));
+        }
+        if (isset($decoded['logs']) && is_array($decoded['logs'])) {
+            update_option(self::LOGS_OPTION_KEY, array_slice($decoded['logs'], -500), false);
+        }
+
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+        exit;
+    }
+
+    public function handle_reset_plugin_data(): void {
+        if (!$this->verify_admin_request()) {
+            return;
+        }
+
+        delete_option(self::FORMS_OPTION_KEY);
+        delete_option(self::SMTP_OPTION_KEY);
+        delete_option(self::LOGS_OPTION_KEY);
+
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+        exit;
+    }
+
+    public function handle_send_test_email(): void {
+        if (!$this->verify_admin_request()) {
+            return;
+        }
+
+        $to = isset($_POST['test_email']) ? sanitize_email(wp_unslash($_POST['test_email'])) : '';
+        if (!is_email($to)) {
+            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+            exit;
+        }
+
+        $sent = wp_mail(
+            $to,
+            '[Ikonic Contact SMTP Form] Test Email',
+            'This is a test email from Ikonic Contact SMTP Form plugin tools page.',
+            ['Content-Type: text/plain; charset=UTF-8']
+        );
+
+        $this->store_log([
+            'form_id' => 'system-test-email',
+            'created_at' => current_time('mysql'),
+            'ip' => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '',
+            'ua' => isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '',
+            'fields' => ['to' => $to],
+            'status' => $sent ? 'success' : 'error',
+        ]);
+
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-tools'));
+        exit;
+    }
+
     public function render_contact_form_shortcode(array $atts): string {
         $atts = shortcode_atts(['id' => ''], $atts, 'ikonic_contact_form');
         $form = $this->resolve_form_by_id((string) $atts['id']);
@@ -559,7 +712,9 @@ CSS;
             $headers[] = 'Reply-To: <' . $reply . '>';
         }
 
+        do_action('icsf_before_send_email', $form, $submitted, $to, $subject, $headers);
         $sent = wp_mail($to, $subject, $body, $headers);
+        do_action('icsf_after_send_email', $form, $submitted, $to, $subject, $headers, $sent);
 
         if (!empty($form['store_entries'])) {
             $this->store_log([
@@ -832,7 +987,8 @@ CSS;
 
         $key = self::RATE_LIMIT_PREFIX . md5($ip);
         $count = (int) get_transient($key);
-        if ($count >= 5) {
+        $max = (int) apply_filters('icsf_rate_limit_max_requests', 5, $ip);
+        if ($count >= $max) {
             return false;
         }
         set_transient($key, $count + 1, HOUR_IN_SECONDS);
