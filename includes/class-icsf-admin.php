@@ -16,17 +16,32 @@ class ICSF_Admin {
 
         add_action('admin_menu', [$this, 'register_menu']);
         add_action('admin_init', [$this, 'register_smtp_settings']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
 
         add_action('admin_post_icsf_save_form', [$this, 'handle_save_form']);
         add_action('admin_post_icsf_delete_form', [$this, 'handle_delete_form']);
         add_action('admin_post_icsf_export_logs', [$this, 'handle_export_logs']);
+        add_action('admin_post_icsf_save_modules', [$this, 'handle_save_modules']);
     }
 
     public function register_menu(): void {
-        add_menu_page('Ikonic Form Builder', 'Ikonic Form Builder', 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page'], 'dashicons-feedback', 58);
+        add_menu_page('Ikonic Form Builder', 'Ikonic Form Builder', 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page'], 'dashicons-superhero', 58);
         add_submenu_page('ikonic-contact-form-builder', 'Forms', 'Forms', 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page']);
         add_submenu_page('ikonic-contact-form-builder', 'Analytics', 'Analytics', 'manage_options', 'ikonic-contact-analytics', [$this, 'render_analytics_page']);
         add_submenu_page('ikonic-contact-form-builder', 'SMTP Settings', 'SMTP Settings', 'manage_options', 'ikonic-contact-smtp-settings', [$this, 'render_smtp_page']);
+        add_submenu_page('ikonic-contact-form-builder', 'UI Studio & Modules', 'UI Studio & Modules', 'manage_options', 'ikonic-contact-modules', [$this, 'render_modules_page']);
+    }
+
+    public function enqueue_admin_assets(string $hook): void {
+        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules'];
+        if (!in_array($hook, $allowed, true)) {
+            return;
+        }
+
+        $css = '.icsf-admin-shell{background:linear-gradient(145deg,#0d1228,#111a3b);color:#f4f7ff;padding:20px;border-radius:16px;margin:10px 0}.icsf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.icsf-card{background:rgba(255,255,255,.08);border:1px solid rgba(112,132,255,.35);padding:14px;border-radius:12px}.icsf-card h3{margin:0 0 6px;color:#cfe6ff}.icsf-card p{margin:0;font-size:20px;font-weight:700}.icsf-module{padding:10px;border:1px solid #d9e0f0;border-radius:8px;background:#fff;margin-bottom:8px}';
+        wp_register_style('icsf-admin-inline', false);
+        wp_enqueue_style('icsf-admin-inline');
+        wp_add_inline_style('icsf-admin-inline', $css);
     }
 
     public function register_smtp_settings(): void {
@@ -76,6 +91,40 @@ class ICSF_Admin {
         echo '</form></div>';
     }
 
+    public function render_modules_page(): void {
+        $modules = $this->plugin->get_modules();
+        echo '<div class="wrap"><h1>UI Studio & Modules</h1>';
+        echo '<p>Turn platform modules on/off for frontend and backend behavior.</p>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<input type="hidden" name="action" value="icsf_save_modules" />';
+        wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
+
+        foreach ($modules as $key => $enabled) {
+            echo '<div class="icsf-module"><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> ' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</label></div>';
+        }
+
+        submit_button('Save Modules');
+        echo '</form></div>';
+    }
+
+    public function handle_save_modules(): void {
+        if (!$this->plugin->verify_admin_request()) {
+            return;
+        }
+
+        $current = $this->plugin->get_modules();
+        $incoming = isset($_POST['modules']) && is_array($_POST['modules']) ? wp_unslash($_POST['modules']) : [];
+        $updated = [];
+
+        foreach ($current as $key => $_) {
+            $updated[$key] = !empty($incoming[$key]) ? 1 : 0;
+        }
+
+        $this->plugin->save_modules($updated);
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-modules'));
+        exit;
+    }
+
     public function render_forms_page(): void {
         $forms = $this->plugin->get_forms();
         $edit_id = isset($_GET['form_id']) ? sanitize_key(wp_unslash($_GET['form_id'])) : '';
@@ -83,7 +132,11 @@ class ICSF_Admin {
         $active = wp_parse_args($active, $this->plugin->default_form());
 
         echo '<div class="wrap"><h1>Forms</h1>';
-        echo '<p>Create multiple forms and embed with <code>[ikonic_contact_form id="form-id"]</code>.</p>';
+        echo '<div class="icsf-admin-shell"><div class="icsf-cards">';
+        echo '<div class="icsf-card"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
+        echo '<div class="icsf-card"><h3>Default Theme</h3><p>' . esc_html($active['theme']) . '</p></div>';
+        echo '<div class="icsf-card"><h3>Current Form</h3><p>' . esc_html($active['name']) . '</p></div>';
+        echo '</div></div>';
 
         echo '<h2>Saved Forms</h2><table class="widefat striped"><thead><tr><th>Name</th><th>ID</th><th>Shortcode</th><th>Actions</th></tr></thead><tbody>';
         if (empty($forms)) {
@@ -93,8 +146,7 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html($form['name']) . '</td><td>' . esc_html($form['id']) . '</td><td><code>[ikonic_contact_form id="' . esc_html($form['id']) . '"]</code></td><td>';
                 echo '<a class="button button-small" href="' . esc_url(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($form['id']))) . '">Edit</a> ';
                 echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline;">';
-                echo '<input type="hidden" name="action" value="icsf_delete_form" />';
-                echo '<input type="hidden" name="form_id" value="' . esc_attr($form['id']) . '" />';
+                echo '<input type="hidden" name="action" value="icsf_delete_form" /><input type="hidden" name="form_id" value="' . esc_attr($form['id']) . '" />';
                 wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
                 echo '<button class="button button-small" type="submit">Delete</button></form>';
                 echo '</td></tr>';
@@ -102,7 +154,7 @@ class ICSF_Admin {
         }
         echo '</tbody></table>';
 
-        echo '<hr><h2>Form Builder</h2>';
+        echo '<hr><h2>Futuristic Form Builder</h2>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_form" />';
         echo '<input type="hidden" name="original_form_id" value="' . esc_attr($edit_id) . '" />';
@@ -120,6 +172,8 @@ class ICSF_Admin {
         }
         echo '</select></td></tr>';
         echo '<tr><th>Button Text</th><td><input type="text" class="regular-text" name="button_text" value="' . esc_attr($active['button_text']) . '" /></td></tr>';
+        echo '<tr><th>Layout</th><td><select name="layout"><option value="grid" ' . selected($active['layout'], 'grid', false) . '>Grid</option><option value="single" ' . selected($active['layout'], 'single', false) . '>Single Column</option></select></td></tr>';
+        echo '<tr><th>Enable Honeypot</th><td><label><input type="checkbox" name="enable_honeypot" value="1" ' . checked(!empty($active['enable_honeypot']), true, false) . ' /> Anti-spam trap</label></td></tr>';
         echo '</table>';
 
         echo '<h3>Fields</h3>';
@@ -187,8 +241,10 @@ class ICSF_Admin {
             'to_email' => isset($_POST['to_email']) ? sanitize_email(wp_unslash($_POST['to_email'])) : '',
             'subject_prefix' => isset($_POST['subject_prefix']) ? sanitize_text_field(wp_unslash($_POST['subject_prefix'])) : '[Contact Form]',
             'success_message' => isset($_POST['success_message']) ? sanitize_text_field(wp_unslash($_POST['success_message'])) : 'Thanks! Your message has been sent.',
-            'theme' => isset($_POST['theme']) ? sanitize_key(wp_unslash($_POST['theme'])) : 'minimal',
-            'button_text' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : 'Send Message',
+            'theme' => isset($_POST['theme']) ? sanitize_key(wp_unslash($_POST['theme'])) : 'neo-glass',
+            'button_text' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : 'Transmit Message',
+            'layout' => isset($_POST['layout']) ? sanitize_key(wp_unslash($_POST['layout'])) : 'grid',
+            'enable_honeypot' => !empty($_POST['enable_honeypot']) ? 1 : 0,
             'fields' => $fields,
         ];
 
@@ -219,15 +275,20 @@ class ICSF_Admin {
         $metrics = $this->analytics->build_metrics($logs);
         $forms = $this->plugin->get_forms();
 
-        echo '<div class="wrap"><h1>Advanced Analytics</h1>';
-        echo '<form method="get" style="margin-bottom:16px;">';
+        echo '<div class="wrap"><h1>Advanced Analytics Command Center</h1>';
+        echo '<div class="icsf-admin-shell"><div class="icsf-cards">';
+        echo '<div class="icsf-card"><h3>Total</h3><p>' . esc_html((string) $metrics['total']) . '</p></div>';
+        echo '<div class="icsf-card"><h3>Success</h3><p>' . esc_html((string) $metrics['success']) . '</p></div>';
+        echo '<div class="icsf-card"><h3>Failed</h3><p>' . esc_html((string) $metrics['failed']) . '</p></div>';
+        echo '<div class="icsf-card"><h3>Success Rate</h3><p>' . esc_html((string) $metrics['success_rate']) . '%</p></div>';
+        echo '</div></div>';
+
+        echo '<form method="get" style="margin:12px 0 16px;">';
         echo '<input type="hidden" name="page" value="ikonic-contact-analytics" />';
         echo '<label>From <input type="date" name="from" value="' . esc_attr($from) . '" /></label> ';
         echo '<label>To <input type="date" name="to" value="' . esc_attr($to) . '" /></label> ';
         echo '<button class="button">Filter</button>';
         echo '</form>';
-
-        echo '<p><strong>Total:</strong> ' . esc_html((string) $metrics['total']) . ' | <strong>Success:</strong> ' . esc_html((string) $metrics['success']) . ' | <strong>Failed:</strong> ' . esc_html((string) $metrics['failed']) . ' | <strong>Success Rate:</strong> ' . esc_html((string) $metrics['success_rate']) . '%</p>';
 
         echo '<h2>Submissions by Form</h2><table class="widefat striped"><thead><tr><th>Form</th><th>Count</th></tr></thead><tbody>';
         if (empty($metrics['by_form'])) {
@@ -250,13 +311,29 @@ class ICSF_Admin {
         }
         echo '</tbody></table>';
 
+        echo '<h2>Hourly Heatmap (0-23)</h2><table class="widefat striped"><thead><tr><th>Hour</th><th>Submissions</th></tr></thead><tbody>';
+        foreach ($metrics['by_hour'] as $hour => $count) {
+            echo '<tr><td>' . esc_html(str_pad((string) $hour, 2, '0', STR_PAD_LEFT) . ':00') . '</td><td>' . esc_html((string) $count) . '</td></tr>';
+        }
+        echo '</tbody></table>';
+
+        echo '<h2>Top Submitted Fields</h2><table class="widefat striped"><thead><tr><th>Field</th><th>Count</th></tr></thead><tbody>';
+        if (empty($metrics['top_fields'])) {
+            echo '<tr><td colspan="2">No data.</td></tr>';
+        } else {
+            foreach ($metrics['top_fields'] as $field => $count) {
+                echo '<tr><td>' . esc_html((string) $field) . '</td><td>' . esc_html((string) $count) . '</td></tr>';
+            }
+        }
+        echo '</tbody></table>';
+
         echo '<h2>Recent Entries</h2><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_export_logs" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
         echo '<button type="submit" class="button button-primary">Export CSV</button></form>';
 
         echo '<table class="widefat striped" style="margin-top:10px;"><thead><tr><th>Date</th><th>Form</th><th>Status</th><th>IP</th><th>Preview</th></tr></thead><tbody>';
-        $recent = array_slice(array_reverse($logs), 0, 50);
+        $recent = array_slice(array_reverse($logs), 0, 60);
         if (empty($recent)) {
             echo '<tr><td colspan="5">No entries.</td></tr>';
         } else {

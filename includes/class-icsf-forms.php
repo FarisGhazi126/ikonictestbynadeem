@@ -14,6 +14,24 @@ class ICSF_Forms {
 
         add_shortcode('ikonic_contact_form', [$this, 'render_shortcode']);
         add_action('init', [$this, 'handle_submission']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+    }
+
+    public function enqueue_assets(): void {
+        $modules = $this->plugin->get_modules();
+        if (empty($modules['frontend_futuristic_ui'])) {
+            return;
+        }
+
+        $css = '.icsf-wrap{max-width:860px;margin:28px auto;padding:28px;border-radius:20px}.icsf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.icsf-full{grid-column:1/-1}.icsf-wrap input,.icsf-wrap textarea,.icsf-wrap select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #c8d2e1;box-sizing:border-box}.icsf-wrap label{font-weight:600}.icsf-progress{height:8px;border-radius:8px;background:rgba(255,255,255,.22);overflow:hidden;margin-bottom:14px}.icsf-progress-bar{height:100%;background:linear-gradient(90deg,#00d4ff,#6f7dff)}.icsf-theme-minimal{background:#fff;border:1px solid #e8edf7;box-shadow:0 12px 30px rgba(10,40,90,.08)}.icsf-theme-neo-glass{background:rgba(8,11,26,.72);border:1px solid rgba(126,145,255,.35);backdrop-filter:blur(8px);color:#f5f9ff;box-shadow:0 14px 40px rgba(84,99,255,.25)}.icsf-theme-neo-glass input,.icsf-theme-neo-glass textarea,.icsf-theme-neo-glass select{background:rgba(255,255,255,.93)}.icsf-theme-cyber-neon{background:#0a1024;border:1px solid #00e1ff;box-shadow:0 0 0 1px rgba(0,225,255,.35),0 16px 46px rgba(0,225,255,.2);color:#dbf7ff}.icsf-theme-cyber-neon input,.icsf-theme-cyber-neon textarea,.icsf-theme-cyber-neon select{background:#101938;color:#dbf7ff;border-color:#2d3f77}.icsf-theme-aurora{background:linear-gradient(135deg,#121d4f,#0d6a7d,#4a267d);color:#fff;box-shadow:0 16px 50px rgba(58,74,180,.3)}.icsf-wrap button{padding:12px 22px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:linear-gradient(90deg,#5f77ff,#00d4ff);color:#fff}@media(max-width:700px){.icsf-grid{grid-template-columns:1fr}}';
+        wp_register_style('icsf-inline', false);
+        wp_enqueue_style('icsf-inline');
+        wp_add_inline_style('icsf-inline', $css);
+
+        $js = "document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('.icsf-wrap form').forEach(function(f){var req=f.querySelectorAll('[required]').length;function update(){if(!req)return;var filled=0;f.querySelectorAll('[required]').forEach(function(el){if((el.value||'').trim()!=='')filled++;});var p=Math.round((filled/req)*100);var b=f.querySelector('.icsf-progress-bar');if(b){b.style.width=p+'%';}}f.addEventListener('input',update);update();});});";
+        wp_register_script('icsf-inline-js', '', [], false, true);
+        wp_enqueue_script('icsf-inline-js');
+        wp_add_inline_script('icsf-inline-js', $js);
     }
 
     public function get_form(string $id): array {
@@ -27,14 +45,11 @@ class ICSF_Forms {
             return wp_parse_args((array) reset($forms), $this->plugin->default_form());
         }
 
-        return wp_parse_args([
-            'id' => 'default-contact',
-            'name' => 'Default Contact Form',
-        ], $this->plugin->default_form());
+        return wp_parse_args(['id' => 'default-contact', 'name' => 'Default Contact Form'], $this->plugin->default_form());
     }
 
     public function sanitize_fields(array $raw_fields): array {
-        $allowed_types = ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date'];
+        $allowed_types = ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url'];
         $clean = [];
 
         foreach ($raw_fields as $field) {
@@ -87,25 +102,40 @@ class ICSF_Forms {
         if (isset($_GET['icsf_status'], $_GET['icsf_form_id']) && sanitize_key(wp_unslash($_GET['icsf_form_id'])) === $form['id']) {
             $status = sanitize_text_field(wp_unslash($_GET['icsf_status']));
             $notice = $status === 'success'
-                ? '<p style="color:green;">' . esc_html($form['success_message']) . '</p>'
-                : '<p style="color:red;">' . esc_html__('There was an issue sending your message.', 'ikonic-contact-smtp-form') . '</p>';
+                ? '<p style="color:#15b86a;font-weight:600;">' . esc_html($form['success_message']) . '</p>'
+                : '<p style="color:#ff5a5f;font-weight:600;">' . esc_html__('There was an issue sending your message.', 'ikonic-contact-smtp-form') . '</p>';
         }
+
+        $modules = $this->plugin->get_modules();
 
         ob_start();
         echo $notice;
-        echo '<div class="icsf-theme-' . esc_attr($form['theme']) . '" style="max-width:760px;margin:20px auto;padding:20px;border:1px solid #ddd;border-radius:14px;">';
+        echo '<div class="icsf-wrap icsf-theme-' . esc_attr($form['theme']) . '">';
         echo '<form method="post">';
+        if (!empty($modules['frontend_progress_meter'])) {
+            echo '<div class="icsf-progress"><div class="icsf-progress-bar" style="width:0%"></div></div>';
+        }
+
         echo '<input type="hidden" name="icsf_submit" value="1" />';
         echo '<input type="hidden" name="icsf_form_id" value="' . esc_attr($form['id']) . '" />';
         wp_nonce_field(ICSF_Plugin::SUBMIT_NONCE_PREFIX . $form['id'], 'icsf_nonce');
 
+        echo '<div class="icsf-grid">';
         foreach ($form['fields'] as $field) {
-            echo '<p><label>' . esc_html($field['label']) . '</label><br />';
+            $full = $field['type'] === 'textarea' ? 'icsf-full' : '';
+            echo '<p class="' . esc_attr($full) . '"><label>' . esc_html($field['label']) . '</label><br />';
             $this->render_field($field);
             echo '</p>';
         }
 
-        echo '<p><button type="submit">' . esc_html($form['button_text']) . '</button></p>';
+        if (!empty($form['enable_honeypot']) && !empty($modules['honeypot'])) {
+            echo '<p class="icsf-full" style="position:absolute;left:-9999px;opacity:0;">';
+            echo '<label>Leave blank</label><input type="text" name="icsf_hp" value="" tabindex="-1" autocomplete="off" />';
+            echo '</p>';
+        }
+
+        echo '<p class="icsf-full"><button type="submit">' . esc_html($form['button_text']) . '</button></p>';
+        echo '</div>';
         echo '</form></div>';
 
         return (string) ob_get_clean();
@@ -124,6 +154,12 @@ class ICSF_Forms {
             $this->redirect('error', $form['id']);
         }
 
+        $modules = $this->plugin->get_modules();
+        if (!empty($form['enable_honeypot']) && !empty($modules['honeypot']) && !empty($_POST['icsf_hp'])) {
+            $this->analytics->log_submission($form['id'], [], 'blocked_honeypot');
+            $this->redirect('error', $form['id']);
+        }
+
         $data = [];
         foreach ($form['fields'] as $field) {
             $name = $field['name'];
@@ -136,6 +172,10 @@ class ICSF_Forms {
                     $this->analytics->log_submission($form['id'], [$name => $value], 'error');
                     $this->redirect('error', $form['id']);
                 }
+            }
+
+            if ($field['type'] === 'url') {
+                $value = esc_url_raw((string) $raw);
             }
 
             if (!empty($field['required']) && trim((string) $value) === '') {
@@ -198,6 +238,7 @@ class ICSF_Forms {
             case 'tel':
             case 'number':
             case 'date':
+            case 'url':
                 echo '<input type="' . esc_attr($field['type']) . '" name="' . $name . '" placeholder="' . $placeholder . '" ' . $required . ' />';
                 break;
             default:

@@ -52,6 +52,8 @@ class ICSF_Analytics {
         $failed = 0;
         $by_form = [];
         $by_day = [];
+        $by_hour = array_fill(0, 24, 0);
+        $top_fields = [];
 
         foreach ($logs as $log) {
             $status = $log['status'] ?? 'success';
@@ -64,14 +66,27 @@ class ICSF_Analytics {
             $form_id = (string) ($log['form_id'] ?? 'unknown');
             $by_form[$form_id] = ($by_form[$form_id] ?? 0) + 1;
 
-            $day = substr((string) ($log['created_at'] ?? ''), 0, 10);
+            $created = (string) ($log['created_at'] ?? '');
+            $day = substr($created, 0, 10);
             if ($day !== '') {
                 $by_day[$day] = ($by_day[$day] ?? 0) + 1;
+            }
+
+            $hour = (int) date('G', strtotime($created ?: 'now'));
+            if (isset($by_hour[$hour])) {
+                $by_hour[$hour]++;
+            }
+
+            foreach ((array) ($log['fields'] ?? []) as $k => $v) {
+                if (trim((string) $v) !== '') {
+                    $top_fields[$k] = ($top_fields[$k] ?? 0) + 1;
+                }
             }
         }
 
         ksort($by_day);
         arsort($by_form);
+        arsort($top_fields);
 
         return [
             'total' => $total,
@@ -80,6 +95,8 @@ class ICSF_Analytics {
             'success_rate' => $total > 0 ? round(($success / $total) * 100, 2) : 0,
             'by_form' => $by_form,
             'by_day' => $by_day,
+            'by_hour' => $by_hour,
+            'top_fields' => array_slice($top_fields, 0, 10, true),
         ];
     }
 }

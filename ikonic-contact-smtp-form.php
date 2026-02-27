@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ikonic Contact SMTP Form
  * Description: Advanced contact form builder with SMTP delivery, analytics, and modular OOP architecture.
- * Version: 5.0.0
+ * Version: 6.0.0
  * Author: Ikonic
  * Text Domain: ikonic-contact-smtp-form
  */

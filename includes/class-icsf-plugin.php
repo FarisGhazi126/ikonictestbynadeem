@@ -8,6 +8,7 @@ class ICSF_Plugin {
     public const SMTP_OPTION_KEY = 'icsf_smtp_settings';
     public const FORMS_OPTION_KEY = 'icsf_forms';
     public const LOGS_OPTION_KEY = 'icsf_submission_logs';
+    public const MODULES_OPTION_KEY = 'icsf_modules';
     public const ADMIN_NONCE_ACTION = 'icsf_admin_action';
     public const SUBMIT_NONCE_PREFIX = 'icsf_submit_';
 
@@ -32,10 +33,18 @@ class ICSF_Plugin {
     public function add_log(array $entry): void {
         $logs = $this->get_logs();
         $logs[] = $entry;
-        if (count($logs) > 1000) {
-            $logs = array_slice($logs, -1000);
+        if (count($logs) > 2000) {
+            $logs = array_slice($logs, -2000);
         }
         update_option(self::LOGS_OPTION_KEY, $logs, false);
+    }
+
+    public function get_modules(): array {
+        return wp_parse_args((array) get_option(self::MODULES_OPTION_KEY, []), $this->default_modules());
+    }
+
+    public function save_modules(array $modules): void {
+        update_option(self::MODULES_OPTION_KEY, wp_parse_args($modules, $this->default_modules()));
     }
 
     public function get_smtp_settings(): array {
@@ -66,8 +75,10 @@ class ICSF_Plugin {
             'to_email' => '',
             'subject_prefix' => '[Contact Form]',
             'success_message' => 'Thanks! Your message has been sent.',
-            'theme' => 'minimal',
-            'button_text' => 'Send Message',
+            'theme' => 'neo-glass',
+            'button_text' => 'Transmit Message',
+            'layout' => 'grid',
+            'enable_honeypot' => 1,
             'fields' => [
                 ['label' => 'Your Name', 'name' => 'your_name', 'type' => 'text', 'required' => 1, 'placeholder' => 'Enter your name', 'options' => []],
                 ['label' => 'Your Email', 'name' => 'your_email', 'type' => 'email', 'required' => 1, 'placeholder' => 'Enter your email', 'options' => []],
@@ -79,8 +90,9 @@ class ICSF_Plugin {
     public function theme_options(): array {
         return [
             'minimal' => 'Minimal',
-            'glass' => 'Glass',
-            'neon' => 'Neon',
+            'neo-glass' => 'Neo Glass',
+            'cyber-neon' => 'Cyber Neon',
+            'aurora' => 'Aurora Gradient',
         ];
     }
 
@@ -123,6 +135,16 @@ class ICSF_Plugin {
         if (!empty($smtp['from_name'])) {
             $phpmailer->FromName = $smtp['from_name'];
         }
+    }
+
+    private function default_modules(): array {
+        return [
+            'frontend_futuristic_ui' => 1,
+            'frontend_progress_meter' => 1,
+            'backend_ui_studio' => 1,
+            'analytics_advanced' => 1,
+            'honeypot' => 1,
+        ];
     }
 
     private function default_smtp_settings(): array {
