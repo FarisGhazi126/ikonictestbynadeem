@@ -1,85 +1,92 @@
 /*
-Theme Name: ikonic test
-Author: Nadeem khan
-Description: Ikonic Test theme.
-Version: 1.0
+Theme Name: Ikonic Agrova Replica
+Author: Nadeem Khan
+Description: Agrova-inspired, fully functional WordPress theme with editable homepage sections, projects custom post type, blog templates, and REST endpoint.
+Version: 1.0.0
+Text Domain: ikonic-test
 */
 
-/* General Reset */
-body, h1, h2, p, ul {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+:root {
+    --green: #4a7c2f;
+    --green-dark: #2f5f18;
+    --cream: #f8f5ec;
+    --text: #1f1f1f;
 }
 
+* { box-sizing: border-box; }
 body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    background-color: #f4f4f4;
-    color: #333;
-}
-
-header {
-    background: #333;
-    color: white;
-    padding: 1rem;
-    text-align: center;
-}
-
-header a {
-    color: #fff;
-    text-decoration: none;
-}
-
-nav ul {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    background: #444;
-}
-
-nav ul li {
-    margin: 0 10px;
-}
-
-nav ul li a {
-    text-decoration: none;
-    color: #fff;
-    padding: 0.5rem 1rem;
-    display: block;
-}
-
-nav ul li a:hover {
-    background: #555;
-    border-radius: 5px;
-}
-
-main {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 1rem;
-    background: white;
-    border: 1px solid #ddd;
-}
-
-.project {
-    margin-bottom: 2rem;
-    padding: 1rem;
-    border: 1px solid #ddd;
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text);
     background: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
 }
 
-.project h2 {
-    color: #0073aa;
+.container { width: min(1120px, 92%); margin: 0 auto; }
+
+.site-header {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.header-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+.site-brand { font-weight: 700; text-decoration: none; color: var(--green-dark); font-size: 1.2rem; }
+.menu-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
+.menu-list a { color: #222; text-decoration: none; font-weight: 600; }
+
+.hero {
+    padding: 100px 0;
+    background: linear-gradient(rgba(23, 40, 13, 0.66), rgba(23, 40, 13, 0.66)),
+        radial-gradient(circle at top right, #709949, #355d20 60%);
+    color: #fff;
+}
+.eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: .8rem; }
+.hero h1 { font-size: clamp(2rem, 4vw, 3.2rem); margin: 12px 0; max-width: 740px; }
+.hero p { max-width: 680px; }
+
+.btn {
+    display: inline-block;
+    margin-top: 18px;
+    text-decoration: none;
+    color: #fff;
+    background: #f4a100;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-weight: 600;
 }
 
-footer {
-    background: #333;
-    color: white;
-    text-align: center;
-    padding: 1rem;
-    margin-top: 2rem;
+.section { padding: 60px 0; }
+.section-alt { background: var(--cream); }
+.two-col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 25px; }
+.two-col-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 28px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+
+.card {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+}
+
+.card h2, .card h3 { margin-top: 0; }
+.post-card h2 { margin-bottom: 8px; }
+.widget ul { padding-left: 18px; margin: 0; }
+
+.site-footer {
+    background: #163011;
+    color: #d4e1cb;
+    padding: 30px 0;
+    margin-top: 30px;
+}
+.footer-wrap { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.footer-menu { list-style: none; display: flex; gap: 16px; margin: 0; padding: 0; }
+.footer-menu a { color: #d4e1cb; text-decoration: none; }
+
+@media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .two-col, .two-col-layout { grid-template-columns: 1fr; }
+    .menu-list { gap: 12px; font-size: 0.95rem; }
 }
