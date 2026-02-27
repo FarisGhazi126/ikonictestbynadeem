@@ -87,6 +87,25 @@ jQuery(function($){
 });
 JS;
         wp_add_inline_script('jquery-ui-sortable', $js);
+
+        $css = <<<CSS
+.icsf-form-wrap{max-width:760px;margin:20px auto;padding:28px;border-radius:18px}
+.icsf-form-wrap .icsf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.icsf-form-wrap .icsf-field-full{grid-column:1/-1}
+.icsf-form-wrap label{display:block;font-weight:600;margin-bottom:6px}
+.icsf-form-wrap input,.icsf-form-wrap textarea,.icsf-form-wrap select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #d7dce4;font-size:14px;box-sizing:border-box}
+.icsf-form-wrap button{padding:12px 22px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
+.icsf-theme-minimal{background:#fff;border:1px solid #eceff4;box-shadow:0 8px 28px rgba(18,38,63,.06)}
+.icsf-theme-minimal button{background:#2678ff;color:#fff}
+.icsf-theme-glass{background:rgba(20,21,37,.7);border:1px solid rgba(133,145,255,.35);backdrop-filter:blur(8px);box-shadow:0 12px 40px rgba(47,70,255,.25);color:#fff}
+.icsf-theme-glass input,.icsf-theme-glass textarea,.icsf-theme-glass select{background:rgba(255,255,255,.92)}
+.icsf-theme-glass button{background:linear-gradient(135deg,#6b7bff,#00d1ff);color:#fff}
+.icsf-theme-neon{background:#0b1020;border:1px solid #00d1ff;box-shadow:0 0 0 1px rgba(0,209,255,.3),0 16px 50px rgba(0,209,255,.18);color:#e9f8ff}
+.icsf-theme-neon input,.icsf-theme-neon textarea,.icsf-theme-neon select{background:#111936;color:#e9f8ff;border-color:#26355f}
+.icsf-theme-neon button{background:linear-gradient(90deg,#00d1ff,#6b7bff);color:#071021}
+@media(max-width:640px){.icsf-form-wrap .icsf-grid{grid-template-columns:1fr}}
+CSS;
+        wp_add_inline_style('wp-admin', $css);
     }
 
     public function register_smtp_settings(): void {
@@ -196,6 +215,17 @@ JS;
                     <tr><th><?php esc_html_e('Recipient Email', 'ikonic-contact-smtp-form'); ?></th><td><input type="email" name="to_email" class="regular-text" value="<?php echo esc_attr($active_form['to_email']); ?>" /></td></tr>
                     <tr><th><?php esc_html_e('Subject Prefix', 'ikonic-contact-smtp-form'); ?></th><td><input type="text" name="subject_prefix" class="regular-text" value="<?php echo esc_attr($active_form['subject_prefix']); ?>" /></td></tr>
                     <tr><th><?php esc_html_e('Success Message', 'ikonic-contact-smtp-form'); ?></th><td><input type="text" name="success_message" class="regular-text" value="<?php echo esc_attr($active_form['success_message']); ?>" /></td></tr>
+                    <tr>
+                        <th><?php esc_html_e('Style Theme', 'ikonic-contact-smtp-form'); ?></th>
+                        <td>
+                            <select name="style_theme">
+                                <?php foreach ($this->style_themes() as $theme_key => $theme_label) : ?>
+                                    <option value="<?php echo esc_attr($theme_key); ?>" <?php selected($active_form['style_theme'], $theme_key); ?>><?php echo esc_html($theme_label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr><th><?php esc_html_e('Button Text', 'ikonic-contact-smtp-form'); ?></th><td><input type="text" name="button_text" class="regular-text" value="<?php echo esc_attr($active_form['button_text']); ?>" /></td></tr>
                 </table>
 
                 <h3><?php esc_html_e('Field Rows (drag using ☰)', 'ikonic-contact-smtp-form'); ?></h3>
@@ -321,6 +351,8 @@ JS;
             'to_email' => isset($_POST['to_email']) ? sanitize_email(wp_unslash($_POST['to_email'])) : '',
             'subject_prefix' => isset($_POST['subject_prefix']) ? sanitize_text_field(wp_unslash($_POST['subject_prefix'])) : '[Contact Form]',
             'success_message' => isset($_POST['success_message']) ? sanitize_text_field(wp_unslash($_POST['success_message'])) : 'Thanks! Your message has been sent.',
+            'style_theme' => $this->sanitize_theme(isset($_POST['style_theme']) ? sanitize_text_field(wp_unslash($_POST['style_theme'])) : 'minimal'),
+            'button_text' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : 'Send Message',
             'fields' => $fields,
         ];
 
@@ -392,21 +424,25 @@ JS;
 
         ob_start();
         echo $notice;
+        echo '<style>' . esc_html($this->frontend_styles()) . '</style>';
         ?>
+        <div class="icsf-form-wrap <?php echo esc_attr('icsf-theme-' . $form['style_theme']); ?>">
         <form method="post" class="icsf-contact-form">
             <input type="hidden" name="icsf_submit" value="1" />
             <input type="hidden" name="icsf_form_id" value="<?php echo esc_attr($form['id']); ?>" />
             <?php wp_nonce_field(self::SUBMIT_NONCE_ACTION . $form['id'], 'icsf_nonce'); ?>
 
+            <div class="icsf-grid">
             <?php foreach ($form['fields'] as $field) : ?>
-                <p>
+                <p class="<?php echo esc_attr($field['type'] === 'textarea' ? 'icsf-field-full' : ''); ?>">
                     <label><?php echo esc_html($field['label']); ?></label><br />
                     <?php $this->render_front_field($field); ?>
                 </p>
             <?php endforeach; ?>
-
-            <p><button type="submit"><?php esc_html_e('Send Message', 'ikonic-contact-smtp-form'); ?></button></p>
+            <p class="icsf-field-full"><button type="submit"><?php echo esc_html($form['button_text']); ?></button></p>
+            </div>
         </form>
+        </div>
         <?php
         return (string) ob_get_clean();
     }
@@ -606,6 +642,8 @@ JS;
             'to_email' => '',
             'subject_prefix' => '[Contact Form]',
             'success_message' => 'Thanks! Your message has been sent.',
+            'style_theme' => 'minimal',
+            'button_text' => 'Send Message',
             'fields' => $this->default_form_fields(),
         ];
     }
@@ -629,8 +667,26 @@ JS;
             'to_email' => '',
             'subject_prefix' => '[Contact Form]',
             'success_message' => 'Thanks! Your message has been sent.',
+            'style_theme' => 'minimal',
+            'button_text' => 'Send Message',
             'fields' => $this->default_form_fields(),
         ];
+    }
+
+    private function style_themes(): array {
+        return [
+            'minimal' => 'Minimal Clean',
+            'glass' => 'Glass Futuristic',
+            'neon' => 'Neon Cyber',
+        ];
+    }
+
+    private function sanitize_theme(string $theme): string {
+        return array_key_exists($theme, $this->style_themes()) ? $theme : 'minimal';
+    }
+
+    private function frontend_styles(): string {
+        return '.icsf-form-wrap{max-width:760px;margin:24px auto;padding:28px;border-radius:18px}.icsf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.icsf-field-full{grid-column:1/-1}.icsf-form-wrap label{display:block;font-weight:600;margin-bottom:6px}.icsf-form-wrap input,.icsf-form-wrap textarea,.icsf-form-wrap select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #d7dce4;font-size:14px;box-sizing:border-box}.icsf-form-wrap button{padding:12px 22px;border-radius:12px;border:0;cursor:pointer;font-weight:700}.icsf-theme-minimal{background:#fff;border:1px solid #eceff4;box-shadow:0 8px 28px rgba(18,38,63,.06)}.icsf-theme-minimal button{background:#2678ff;color:#fff}.icsf-theme-glass{background:rgba(20,21,37,.7);border:1px solid rgba(133,145,255,.35);backdrop-filter:blur(8px);box-shadow:0 12px 40px rgba(47,70,255,.25);color:#fff}.icsf-theme-glass input,.icsf-theme-glass textarea,.icsf-theme-glass select{background:rgba(255,255,255,.92)}.icsf-theme-glass button{background:linear-gradient(135deg,#6b7bff,#00d1ff);color:#fff}.icsf-theme-neon{background:#0b1020;border:1px solid #00d1ff;box-shadow:0 0 0 1px rgba(0,209,255,.3),0 16px 50px rgba(0,209,255,.18);color:#e9f8ff}.icsf-theme-neon input,.icsf-theme-neon textarea,.icsf-theme-neon select{background:#111936;color:#e9f8ff;border-color:#26355f}.icsf-theme-neon button{background:linear-gradient(90deg,#00d1ff,#6b7bff);color:#071021}@media(max-width:640px){.icsf-grid{grid-template-columns:1fr}}';
     }
 
     private function default_smtp_settings(): array {
