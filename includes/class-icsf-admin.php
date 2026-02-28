@@ -41,7 +41,7 @@ class ICSF_Admin {
         }
 
         $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25);overflow:hidden}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-enterprise .icsf-title{font-size:26px;font-weight:700;margin:0;color:#f4f8ff !important}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700;color:#f4f8ff}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:1080px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}.icsf-enterprise .notice,.icsf-enterprise .updated,.icsf-enterprise .error{background:#fff;color:#1d2327;border-left:4px solid #2271b1;margin:10px 0;border-radius:6px}.icsf-code{font-family:ui-monospace,Menlo,monospace;background:#f2f6ff;border:1px solid #d8e1f5;border-radius:8px;padding:8px}';
-        $css .= '.icsf-help{color:#5f6b85;margin:4px 0 0}.icsf-builder-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.icsf-builder-nav a{text-decoration:none;padding:6px 10px;border-radius:999px;background:#eef3ff;border:1px solid #d8e3fb;color:#1d4a9e;font-weight:600}.icsf-section{border:1px solid #e7ecf7;border-radius:10px;padding:14px;margin-bottom:14px;background:#fcfdff}.icsf-section h3{margin-top:0;margin-bottom:6px}.icsf-section .form-table{margin-top:6px}.icsf-field-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-top:8px}.icsf-field-types span{background:#fff;border:1px solid #dbe5f8;border-radius:8px;padding:6px 8px;font-size:12px;text-align:center}.icsf-page-tabs{margin:12px 0 16px}.icsf-page-tabs .nav-tab{border-radius:8px 8px 0 0}.icsf-page-tabs .nav-tab-active{background:#fff;border-bottom-color:#fff}.icsf-collapsible{margin-top:14px}.icsf-collapsible summary{cursor:pointer;font-weight:600;padding:8px 10px;background:#f4f7ff;border:1px solid #dce5fa;border-radius:8px}.icsf-collapsible[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0}.icsf-collapsible-body{border:1px solid #dce5fa;border-top:0;border-radius:0 0 8px 8px;padding:10px;background:#fff}.icsf-builder-nav button{border:1px solid #d8e3fb;background:#eef3ff;color:#1d4a9e;border-radius:999px;padding:6px 10px;font-weight:600;cursor:pointer}.icsf-builder-nav button.is-active{background:#1d4a9e;color:#fff;border-color:#1d4a9e}.icsf-section{display:none}.icsf-section.is-active{display:block}.icsf-form-actions{position:sticky;bottom:0;background:#fff;padding:12px 0 0;border-top:1px solid #e7ecf7;margin-top:14px}';
+        $css .= '.icsf-help{color:#5f6b85;margin:4px 0 0}.icsf-builder-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.icsf-builder-nav a{text-decoration:none;padding:6px 10px;border-radius:999px;background:#eef3ff;border:1px solid #d8e3fb;color:#1d4a9e;font-weight:600}.icsf-section{border:1px solid #e7ecf7;border-radius:10px;padding:14px;margin-bottom:14px;background:#fcfdff}.icsf-section h3{margin-top:0;margin-bottom:6px}.icsf-section .form-table{margin-top:6px}.icsf-field-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-top:8px}.icsf-field-types span{background:#fff;border:1px solid #dbe5f8;border-radius:8px;padding:6px 8px;font-size:12px;text-align:center}.icsf-page-tabs{margin:12px 0 16px}.icsf-page-tabs .nav-tab{border-radius:8px 8px 0 0}.icsf-page-tabs .nav-tab-active{background:#fff;border-bottom-color:#fff}.icsf-collapsible{margin-top:14px}.icsf-collapsible summary{cursor:pointer;font-weight:600;padding:8px 10px;background:#f4f7ff;border:1px solid #dce5fa;border-radius:8px}.icsf-collapsible[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0}.icsf-collapsible-body{border:1px solid #dce5fa;border-top:0;border-radius:0 0 8px 8px;padding:10px;background:#fff}.icsf-builder-nav button{border:1px solid #d8e3fb;background:#eef3ff;color:#1d4a9e;border-radius:999px;padding:6px 10px;font-weight:600;cursor:pointer}.icsf-builder-nav button.is-active{background:#1d4a9e;color:#fff;border-color:#1d4a9e}.icsf-section{display:none}.icsf-section.is-active{display:block}.icsf-form-actions{position:sticky;bottom:0;background:#fff;padding:12px 0 0;border-top:1px solid #e7ecf7;margin-top:14px}.icsf-stack{display:grid;gap:12px}.icsf-kv{display:grid;grid-template-columns:180px 1fr;gap:8px 14px}.icsf-kv div{padding:8px 0;border-bottom:1px dashed #e4eaf7}.icsf-kv strong{color:#1d4a9e}.icsf-module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.icsf-module{height:100%}.icsf-subtle{color:#66758f;font-size:12px;margin:0 0 8px}.icsf-toolbar-inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}';
         wp_register_style('icsf-admin-inline', false);
         wp_enqueue_style('icsf-admin-inline');
         wp_add_inline_style('icsf-admin-inline', $css);
@@ -104,11 +104,20 @@ class ICSF_Admin {
         echo '<div class="icsf-stat"><h3>Port</h3><p>' . esc_html((string) $smtp['smtp_port']) . '</p></div>';
         echo '</div></div>';
 
-        echo '<div class="icsf-panel"><h2>SMTP Configuration</h2><form method="post" action="options.php">';
+        echo '<div class="icsf-panel icsf-stack">';
+        echo '<details class="icsf-collapsible" open><summary>SMTP Configuration</summary><div class="icsf-collapsible-body"><form method="post" action="options.php">';
         settings_fields('icsf_smtp_settings_group');
         do_settings_sections('ikonic-contact-smtp-settings');
         submit_button('Save SMTP Profile');
-        echo '</form></div></div>';
+        echo '</form></div></details>';
+        echo '<details class="icsf-collapsible"><summary>Current Delivery Snapshot</summary><div class="icsf-collapsible-body"><div class="icsf-kv">';
+        echo '<div><strong>Recipient</strong></div><div>' . esc_html((string) ($smtp['to_email'] ?: 'Not set')) . '</div>';
+        echo '<div><strong>From Name</strong></div><div>' . esc_html((string) ($smtp['from_name'] ?: 'Not set')) . '</div>';
+        echo '<div><strong>From Email</strong></div><div>' . esc_html((string) ($smtp['from_email'] ?: 'Not set')) . '</div>';
+        echo '<div><strong>Encryption</strong></div><div>' . esc_html(strtoupper((string) $smtp['smtp_secure'])) . '</div>';
+        echo '<div><strong>Username</strong></div><div>' . esc_html((string) ($smtp['smtp_username'] ?: 'Not set')) . '</div>';
+        echo '</div></div></details>';
+        echo '</div></div>';
     }
 
     public function render_modules_page(): void {
@@ -134,12 +143,28 @@ class ICSF_Admin {
             'webhook_gateway' => 'Allow webhook delivery to external platforms.',
         ];
 
-        foreach ($modules as $key => $enabled) {
-            $help = isset($module_help[$key]) ? $module_help[$key] : 'Module toggle for enterprise behavior.';
-            echo '<div class="icsf-module"><div><strong>' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</strong><br><span style="color:#65789b;font-size:12px">' . esc_html($help) . '</span></div><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> Enabled</label></div>';
+        $module_groups = [
+            'Frontend Experience' => ['frontend_futuristic_ui', 'frontend_progress_meter', 'honeypot'],
+            'Admin & Analytics' => ['backend_ui_studio', 'analytics_advanced', 'entries_manager'],
+            'Automation' => ['autoresponder', 'webhook_gateway'],
+        ];
+
+        foreach ($module_groups as $group_title => $group_keys) {
+            echo '<details class="icsf-collapsible" open><summary>' . esc_html($group_title) . '</summary><div class="icsf-collapsible-body"><div class="icsf-module-grid">';
+            foreach ($group_keys as $key) {
+                if (!array_key_exists($key, $modules)) {
+                    continue;
+                }
+
+                $help = isset($module_help[$key]) ? $module_help[$key] : 'Module toggle for enterprise behavior.';
+                echo '<div class="icsf-module"><div><strong>' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</strong><p class="icsf-subtle">' . esc_html($help) . '</p></div><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($modules[$key]), true, false) . ' /> Enabled</label></div>';
+            }
+            echo '</div></div></details>';
         }
 
+        echo '<div class="icsf-form-actions">';
         submit_button('Save Module Matrix');
+        echo '</div>';
         echo '</form></div>';
     }
 
@@ -270,16 +295,16 @@ class ICSF_Admin {
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Operational Records</div><h1 class="icsf-title">Entries Manager</h1></div><span class="icsf-chip">Data Layer</span></div>';
         echo '<div class="icsf-grid"><div class="icsf-stat"><h3>Total Entries</h3><p>' . esc_html((string) count($logs)) . '</p></div><div class="icsf-stat"><h3>Filter</h3><p style="font-size:16px">' . esc_html($form_filter ?: 'All Forms') . '</p></div></div></div>';
 
-        echo '<div class="icsf-panel"><form method="get" style="margin-bottom:12px;">';
+        echo '<div class="icsf-panel icsf-stack"><details class="icsf-collapsible" open><summary>Filters</summary><div class="icsf-collapsible-body"><form method="get" class="icsf-toolbar-inline">';
         echo '<input type="hidden" name="page" value="ikonic-contact-entries" />';
         echo '<select name="form_id"><option value="">All Forms</option>';
         foreach ($forms as $id => $form) {
             echo '<option value="' . esc_attr((string) $id) . '" ' . selected($form_filter, (string) $id, false) . '>' . esc_html((string) $form['name']) . '</option>';
         }
-        echo '</select> <button class="button">Apply Filter</button></form>';
+        echo '</select> <button class="button">Apply Filter</button></form></div></details>';
 
-        echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Date</th><th>Form</th><th>Status</th><th>IP</th><th>User Agent</th><th>Payload</th></tr></thead><tbody>';
-        $rows = array_slice(array_reverse($logs), 0, 200);
+        echo '<details class="icsf-collapsible" open><summary>Latest Entries (up to 100)</summary><div class="icsf-collapsible-body"><div class="icsf-table"><table class="widefat striped"><thead><tr><th>Date</th><th>Form</th><th>Status</th><th>IP</th><th>User Agent</th><th>Payload</th></tr></thead><tbody>';
+        $rows = array_slice(array_reverse($logs), 0, 100);
         if (empty($rows)) {
             echo '<tr><td colspan="6">No entries.</td></tr>';
         } else {
@@ -287,7 +312,7 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html((string) ($row['created_at'] ?? '')) . '</td><td>' . esc_html((string) ($row['form_id'] ?? '')) . '</td><td>' . esc_html((string) ($row['status'] ?? '')) . '</td><td>' . esc_html((string) ($row['ip'] ?? '')) . '</td><td>' . esc_html((string) ($row['ua'] ?? '')) . '</td><td><code>' . esc_html(wp_json_encode((array) ($row['fields'] ?? []))) . '</code></td></tr>';
             }
         }
-        echo '</tbody></table></div></div></div>';
+        echo '</tbody></table></div></div></details></div></div>';
     }
 
     public function handle_save_form(): void {
@@ -419,14 +444,14 @@ class ICSF_Admin {
         echo '<div class="icsf-stat"><h3>Success Rate</h3><p>' . esc_html((string) $metrics['success_rate']) . '%</p></div>';
         echo '</div></div>';
 
-        echo '<div class="icsf-panel"><form method="get" style="margin-bottom:16px;">';
+        echo '<div class="icsf-panel icsf-stack"><details class="icsf-collapsible" open><summary>Analytics Filters</summary><div class="icsf-collapsible-body"><form method="get" class="icsf-toolbar-inline">';
         echo '<input type="hidden" name="page" value="ikonic-contact-analytics" />';
         echo '<label>From <input type="date" name="from" value="' . esc_attr($from) . '" /></label> ';
         echo '<label>To <input type="date" name="to" value="' . esc_attr($to) . '" /></label> ';
         echo '<button class="button">Filter Window</button>';
-        echo '</form>';
+        echo '</form></div></details>';
 
-        echo '<h2>Submissions by Form</h2><table class="widefat striped"><thead><tr><th>Form</th><th>Count</th></tr></thead><tbody>';
+        echo '<details class="icsf-collapsible" open><summary>Submissions by Form</summary><div class="icsf-collapsible-body"><table class="widefat striped"><thead><tr><th>Form</th><th>Count</th></tr></thead><tbody>';
         if (empty($metrics['by_form'])) {
             echo '<tr><td colspan="2">No data.</td></tr>';
         } else {
@@ -435,9 +460,9 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html($name . ' (' . $id . ')') . '</td><td>' . esc_html((string) $count) . '</td></tr>';
             }
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></details>';
 
-        echo '<h2>Daily Trend</h2><table class="widefat striped"><thead><tr><th>Date</th><th>Submissions</th></tr></thead><tbody>';
+        echo '<details class="icsf-collapsible" open><summary>Daily Trend</summary><div class="icsf-collapsible-body"><table class="widefat striped"><thead><tr><th>Date</th><th>Submissions</th></tr></thead><tbody>';
         if (empty($metrics['by_day'])) {
             echo '<tr><td colspan="2">No data.</td></tr>';
         } else {
@@ -445,15 +470,15 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html($day) . '</td><td>' . esc_html((string) $count) . '</td></tr>';
             }
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></details>';
 
-        echo '<h2>Hourly Heatmap (0-23)</h2><table class="widefat striped"><thead><tr><th>Hour</th><th>Submissions</th></tr></thead><tbody>';
+        echo '<details class="icsf-collapsible" open><summary>Hourly Heatmap (0-23)</summary><div class="icsf-collapsible-body"><table class="widefat striped"><thead><tr><th>Hour</th><th>Submissions</th></tr></thead><tbody>';
         foreach ($metrics['by_hour'] as $hour => $count) {
             echo '<tr><td>' . esc_html(str_pad((string) $hour, 2, '0', STR_PAD_LEFT) . ':00') . '</td><td>' . esc_html((string) $count) . '</td></tr>';
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></details>';
 
-        echo '<h2>Top Submitted Fields</h2><table class="widefat striped"><thead><tr><th>Field</th><th>Count</th></tr></thead><tbody>';
+        echo '<details class="icsf-collapsible" open><summary>Top Submitted Fields</summary><div class="icsf-collapsible-body"><table class="widefat striped"><thead><tr><th>Field</th><th>Count</th></tr></thead><tbody>';
         if (empty($metrics['top_fields'])) {
             echo '<tr><td colspan="2">No data.</td></tr>';
         } else {
@@ -461,9 +486,9 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html((string) $field) . '</td><td>' . esc_html((string) $count) . '</td></tr>';
             }
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></details>';
 
-        echo '<h2>Recent Entries</h2><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<details class="icsf-collapsible" open><summary>Recent Entries & Export</summary><div class="icsf-collapsible-body"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_export_logs" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
         echo '<button type="submit" class="button button-primary">Export CSV</button></form>';
@@ -477,7 +502,7 @@ class ICSF_Admin {
                 echo '<tr><td>' . esc_html((string) $row['created_at']) . '</td><td>' . esc_html((string) $row['form_id']) . '</td><td>' . esc_html((string) $row['status']) . '</td><td>' . esc_html((string) $row['ip']) . '</td><td>' . esc_html($this->summary((array) ($row['fields'] ?? []))) . '</td></tr>';
             }
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></details>';
 
         echo '</div></div>';
     }
