@@ -155,9 +155,9 @@ class ICSF_Plugin {
             'webhook_enabled' => 0,
             'webhook_url' => '',
             'fields' => [
-                ['label' => 'Your Name', 'name' => 'your_name', 'type' => 'text', 'required' => 1, 'placeholder' => 'Enter your name', 'options' => []],
-                ['label' => 'Your Email', 'name' => 'your_email', 'type' => 'email', 'required' => 1, 'placeholder' => 'Enter your email', 'options' => []],
-                ['label' => 'Message', 'name' => 'message', 'type' => 'textarea', 'required' => 1, 'placeholder' => 'Write your message', 'options' => []],
+                ['label' => 'Your Name', 'name' => 'your_name', 'type' => 'text', 'required' => 1, 'placeholder' => 'Enter your name', 'help_text' => '', 'default_value' => '', 'width' => 'half', 'validation_pattern' => '', 'min_length' => '', 'max_length' => '', 'min' => '', 'max' => '', 'step' => '', 'rows' => 5, 'options' => []],
+                ['label' => 'Your Email', 'name' => 'your_email', 'type' => 'email', 'required' => 1, 'placeholder' => 'Enter your email', 'help_text' => '', 'default_value' => '', 'width' => 'half', 'validation_pattern' => '', 'min_length' => '', 'max_length' => '', 'min' => '', 'max' => '', 'step' => '', 'rows' => 5, 'options' => []],
+                ['label' => 'Message', 'name' => 'message', 'type' => 'textarea', 'required' => 1, 'placeholder' => 'Write your message', 'help_text' => '', 'default_value' => '', 'width' => 'full', 'validation_pattern' => '', 'min_length' => '', 'max_length' => '', 'min' => '', 'max' => '', 'step' => '', 'rows' => 5, 'options' => []],
             ],
         ];
     }
@@ -255,13 +255,21 @@ class ICSF_Plugin {
 
             $label = sanitize_text_field((string) ($field['label'] ?? ''));
             $name = sanitize_key((string) ($field['name'] ?? ''));
-            if ($label === '' || $name === '') {
+            if ($name === '') {
                 continue;
             }
 
             $type = sanitize_key((string) ($field['type'] ?? 'text'));
-            if (!in_array($type, ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url'], true)) {
+            if (!in_array($type, ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url', 'hidden', 'password'], true)) {
                 $type = 'text';
+            }
+
+            if ($label === '') {
+                $label = $type === 'hidden' ? ucfirst(str_replace('_', ' ', $name)) : '';
+            }
+
+            if ($label === '') {
+                continue;
             }
 
             $options = [];
@@ -272,12 +280,27 @@ class ICSF_Plugin {
                 }
             }
 
+            $width = sanitize_key((string) ($field['width'] ?? 'half'));
+            if (!in_array($width, ['half', 'full'], true)) {
+                $width = in_array($type, ['textarea', 'radio', 'checkbox'], true) ? 'full' : 'half';
+            }
+
             $clean_fields[] = [
                 'label' => $label,
                 'name' => $name,
                 'type' => $type,
                 'required' => !empty($field['required']) ? 1 : 0,
                 'placeholder' => sanitize_text_field((string) ($field['placeholder'] ?? '')),
+                'help_text' => sanitize_text_field((string) ($field['help_text'] ?? '')),
+                'default_value' => sanitize_text_field((string) ($field['default_value'] ?? '')),
+                'width' => $width,
+                'validation_pattern' => sanitize_text_field((string) ($field['validation_pattern'] ?? '')),
+                'min_length' => isset($field['min_length']) && $field['min_length'] !== '' ? max(0, absint($field['min_length'])) : '',
+                'max_length' => isset($field['max_length']) && $field['max_length'] !== '' ? max(0, absint($field['max_length'])) : '',
+                'min' => isset($field['min']) && $field['min'] !== '' ? sanitize_text_field((string) $field['min']) : '',
+                'max' => isset($field['max']) && $field['max'] !== '' ? sanitize_text_field((string) $field['max']) : '',
+                'step' => isset($field['step']) && $field['step'] !== '' ? sanitize_text_field((string) $field['step']) : '',
+                'rows' => isset($field['rows']) && $field['rows'] !== '' ? max(2, absint($field['rows'])) : 5,
                 'options' => $options,
             ];
         }

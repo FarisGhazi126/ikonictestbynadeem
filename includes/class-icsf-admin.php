@@ -256,22 +256,32 @@ class ICSF_Admin {
         echo '</table></div>';
 
         echo '<div id="icsf-fields" class="icsf-section" data-section="fields"><h3>Field Matrix</h3><p class="icsf-help">Create form fields. Names should be unique and lowercase-friendly.</p>';
-        echo '<div class="icsf-code">Supported types:</div><div class="icsf-field-types"><span>text</span><span>email</span><span>textarea</span><span>select</span><span>radio</span><span>checkbox</span><span>tel</span><span>number</span><span>date</span><span>url</span></div>';
-        echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Placeholder</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
+        echo '<div class="icsf-code">Supported types:</div><div class="icsf-field-types"><span>text</span><span>email</span><span>password</span><span>textarea</span><span>select</span><span>radio</span><span>checkbox</span><span>tel</span><span>number</span><span>date</span><span>url</span><span>hidden</span></div>';
+        echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Width</th><th>Placeholder</th><th>Default</th><th>Help</th><th>Validation Pattern</th><th>Min Len</th><th>Max Len</th><th>Min</th><th>Max</th><th>Step</th><th>Rows</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
         $rows = !empty($active['fields']) ? $active['fields'] : $this->plugin->default_form()['fields'];
         foreach ($rows as $i => $field) {
             echo '<tr>';
             echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][label]" value="' . esc_attr($field['label']) . '" /></td>';
             echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][name]" value="' . esc_attr($field['name']) . '" /></td>';
             echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][type]" value="' . esc_attr($field['type']) . '" /></td>';
-            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][placeholder]" value="' . esc_attr($field['placeholder']) . '" /></td>';
-            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][options]" value="' . esc_attr(implode(',', $field['options'])) . '" /></td>';
-            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][required]" value="' . esc_attr($field['required'] ? '1' : '0') . '" /></td>';
+            echo '<td><select name="fields[' . esc_attr((string) $i) . '][width]"><option value="half" ' . selected(($field['width'] ?? 'half'), 'half', false) . '>Half</option><option value="full" ' . selected(($field['width'] ?? ''), 'full', false) . '>Full</option></select></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][placeholder]" value="' . esc_attr((string) ($field['placeholder'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][default_value]" value="' . esc_attr((string) ($field['default_value'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][help_text]" value="' . esc_attr((string) ($field['help_text'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][validation_pattern]" value="' . esc_attr((string) ($field['validation_pattern'] ?? '')) . '" /></td>';
+            echo '<td><input type="number" min="0" name="fields[' . esc_attr((string) $i) . '][min_length]" value="' . esc_attr((string) ($field['min_length'] ?? '')) . '" /></td>';
+            echo '<td><input type="number" min="0" name="fields[' . esc_attr((string) $i) . '][max_length]" value="' . esc_attr((string) ($field['max_length'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][min]" value="' . esc_attr((string) ($field['min'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][max]" value="' . esc_attr((string) ($field['max'] ?? '')) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][step]" value="' . esc_attr((string) ($field['step'] ?? '')) . '" /></td>';
+            echo '<td><input type="number" min="2" name="fields[' . esc_attr((string) $i) . '][rows]" value="' . esc_attr((string) ($field['rows'] ?? 5)) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][options]" value="' . esc_attr(implode(',', (array) ($field['options'] ?? []))) . '" /></td>';
+            echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][required]" value="' . esc_attr(!empty($field['required']) ? '1' : '0') . '" /></td>';
             echo '</tr>';
         }
         for ($n = 0; $n < 4; $n++) {
             $idx = count($rows) + $n;
-            echo '<tr><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][label]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][name]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][type]" value="text" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][placeholder]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][options]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][required]" value="0" /></td></tr>';
+            echo '<tr><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][label]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][name]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][type]" value="text" /></td><td><select name="fields[' . esc_attr((string) $idx) . '][width]"><option value="half">Half</option><option value="full">Full</option></select></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][placeholder]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][default_value]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][help_text]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][validation_pattern]" /></td><td><input type="number" min="0" name="fields[' . esc_attr((string) $idx) . '][min_length]" /></td><td><input type="number" min="0" name="fields[' . esc_attr((string) $idx) . '][max_length]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][min]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][max]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][step]" /></td><td><input type="number" min="2" name="fields[' . esc_attr((string) $idx) . '][rows]" value="5" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][options]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][required]" value="0" /></td></tr>';
         }
         echo '</tbody></table></div></div>';
 

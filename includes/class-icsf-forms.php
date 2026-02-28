@@ -49,7 +49,7 @@ class ICSF_Forms {
     }
 
     public function sanitize_fields(array $raw_fields): array {
-        $allowed_types = ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url'];
+        $allowed_types = ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url', 'hidden', 'password'];
         $clean = [];
 
         foreach ($raw_fields as $field) {
@@ -62,14 +62,32 @@ class ICSF_Forms {
             $type = isset($field['type']) ? strtolower(sanitize_text_field((string) $field['type'])) : 'text';
             $placeholder = isset($field['placeholder']) ? sanitize_text_field((string) $field['placeholder']) : '';
             $required = !empty($field['required']) ? 1 : 0;
+            $help_text = isset($field['help_text']) ? sanitize_text_field((string) $field['help_text']) : '';
+            $default_value = isset($field['default_value']) ? sanitize_text_field((string) $field['default_value']) : '';
+            $width = isset($field['width']) ? sanitize_key((string) $field['width']) : 'half';
+            $pattern = isset($field['validation_pattern']) ? sanitize_text_field((string) $field['validation_pattern']) : '';
+            $min_length = isset($field['min_length']) && $field['min_length'] !== '' ? max(0, absint($field['min_length'])) : '';
+            $max_length = isset($field['max_length']) && $field['max_length'] !== '' ? max(0, absint($field['max_length'])) : '';
+            $min = isset($field['min']) ? sanitize_text_field((string) $field['min']) : '';
+            $max = isset($field['max']) ? sanitize_text_field((string) $field['max']) : '';
+            $step = isset($field['step']) ? sanitize_text_field((string) $field['step']) : '';
+            $rows = isset($field['rows']) && $field['rows'] !== '' ? max(2, absint($field['rows'])) : 5;
             $options_raw = isset($field['options']) ? sanitize_text_field((string) $field['options']) : '';
 
-            if ($label === '' || $name === '') {
+            if ($name === '') {
+                continue;
+            }
+
+            if ($label === '' && $type !== 'hidden') {
                 continue;
             }
 
             if (!in_array($type, $allowed_types, true)) {
                 $type = 'text';
+            }
+
+            if (!in_array($width, ['half', 'full'], true)) {
+                $width = in_array($type, ['textarea', 'radio', 'checkbox'], true) ? 'full' : 'half';
             }
 
             $options = [];
@@ -82,11 +100,21 @@ class ICSF_Forms {
             }
 
             $clean[] = [
-                'label' => $label,
+                'label' => $label !== '' ? $label : ucfirst(str_replace('_', ' ', $name)),
                 'name' => $name,
                 'type' => $type,
                 'required' => $required,
                 'placeholder' => $placeholder,
+                'help_text' => $help_text,
+                'default_value' => $default_value,
+                'width' => $width,
+                'validation_pattern' => $pattern,
+                'min_length' => $min_length,
+                'max_length' => $max_length,
+                'min' => $min,
+                'max' => $max,
+                'step' => $step,
+                'rows' => $rows,
                 'options' => $options,
             ];
         }
@@ -127,9 +155,14 @@ class ICSF_Forms {
         $grid_class = ($form['layout'] ?? 'grid') === 'single' ? 'icsf-single' : 'icsf-grid';
         echo '<div class="' . esc_attr($grid_class) . '">';
         foreach ($form['fields'] as $field) {
-            $full = $field['type'] === 'textarea' || ($form['layout'] ?? '') === 'single' ? 'icsf-full' : '';
-            echo '<p class="' . esc_attr($full) . '"><label>' . esc_html($field['label']) . '</label><br />';
+            $is_full = ($field['width'] ?? 'half') === 'full' || $field['type'] === 'textarea' || ($form['layout'] ?? '') === 'single';
+            $full = $is_full ? 'icsf-full' : '';
+            $label = $field['type'] === 'hidden' ? '' : '<label>' . esc_html($field['label']) . '</label><br />';
+            echo '<p class="' . esc_attr($full) . '">' . $label;
             $this->render_field($field);
+            if (!empty($field['help_text']) && $field['type'] !== 'hidden') {
+                echo '<small style="display:block;opacity:.8;margin-top:4px;">' . esc_html((string) $field['help_text']) . '</small>';
+            }
             echo '</p>';
         }
 
@@ -177,7 +210,7 @@ class ICSF_Forms {
         $data = [];
         foreach ($form['fields'] as $field) {
             $name = $field['name'];
-            $raw = isset($_POST[$name]) ? wp_unslash($_POST[$name]) : '';
+            $raw = isset($_POST[$name]) ? wp_unslash($_POST[$name]) : ($field['default_value'] ?? '');
             $value = is_array($raw) ? implode(', ', array_map('sanitize_text_field', $raw)) : sanitize_textarea_field((string) $raw);
 
             if ($field['type'] === 'email') {
@@ -192,9 +225,46 @@ class ICSF_Forms {
                 $value = esc_url_raw((string) $raw);
             }
 
+            if (in_array($field['type'], ['number', 'date'], true)) {
+                $value = sanitize_text_field((string) $raw);
+            }
+
             if (!empty($field['required']) && trim((string) $value) === '') {
                 $this->analytics->log_submission($form['id'], [$name => $value], 'error');
                 $this->redirect('error', $form['id']);
+            }
+
+            $min_length = isset($field['min_length']) && $field['min_length'] !== '' ? (int) $field['min_length'] : 0;
+            $max_length = isset($field['max_length']) && $field['max_length'] !== '' ? (int) $field['max_length'] : 0;
+            $len = function_exists('mb_strlen') ? mb_strlen((string) $value) : strlen((string) $value);
+            if ($min_length > 0 && $value !== '' && $len < $min_length) {
+                $this->analytics->log_submission($form['id'], [$name => $value], 'error');
+                $this->redirect('error', $form['id']);
+            }
+            if ($max_length > 0 && $value !== '' && $len > $max_length) {
+                $this->analytics->log_submission($form['id'], [$name => $value], 'error');
+                $this->redirect('error', $form['id']);
+            }
+
+            $pattern = isset($field['validation_pattern']) ? (string) $field['validation_pattern'] : '';
+            if ($pattern !== '' && $value !== '') {
+                $regex = '/'. str_replace('/', '\/', $pattern) . '/u';
+                if (@preg_match($regex, '') !== false && !preg_match($regex, (string) $value)) {
+                    $this->analytics->log_submission($form['id'], [$name => $value], 'error');
+                    $this->redirect('error', $form['id']);
+                }
+            }
+
+            if ($field['type'] === 'number' && $value !== '' && is_numeric($value)) {
+                $numeric = (float) $value;
+                if ($field['min'] !== '' && is_numeric((string) $field['min']) && $numeric < (float) $field['min']) {
+                    $this->analytics->log_submission($form['id'], [$name => $value], 'error');
+                    $this->redirect('error', $form['id']);
+                }
+                if ($field['max'] !== '' && is_numeric((string) $field['max']) && $numeric > (float) $field['max']) {
+                    $this->analytics->log_submission($form['id'], [$name => $value], 'error');
+                    $this->redirect('error', $form['id']);
+                }
             }
 
             $data[$name] = $value;
@@ -260,14 +330,17 @@ class ICSF_Forms {
     private function render_field(array $field): void {
         $required = !empty($field['required']) ? 'required' : '';
         $name = esc_attr($field['name']);
-        $placeholder = esc_attr($field['placeholder']);
+        $placeholder = esc_attr((string) ($field['placeholder'] ?? ''));
+        $value = esc_attr((string) ($field['default_value'] ?? ''));
+        $attrs = $this->build_field_attributes($field);
 
         switch ($field['type']) {
             case 'textarea':
-                echo '<textarea name="' . $name . '" rows="5" placeholder="' . $placeholder . '" ' . $required . '></textarea>';
+                $rows = isset($field['rows']) && (int) $field['rows'] > 1 ? (int) $field['rows'] : 5;
+                echo '<textarea name="' . $name . '" rows="' . esc_attr((string) $rows) . '" placeholder="' . $placeholder . '" ' . $required . ' ' . $attrs . '>' . esc_textarea((string) ($field['default_value'] ?? '')) . '</textarea>';
                 break;
             case 'select':
-                echo '<select name="' . $name . '" ' . $required . '><option value="">' . esc_html__('Select', 'ikonic-contact-smtp-form') . '</option>';
+                echo '<select name="' . $name . '" ' . $required . ' ' . $attrs . '><option value="">' . esc_html__('Select', 'ikonic-contact-smtp-form') . '</option>';
                 foreach ($field['options'] as $opt) {
                     echo '<option value="' . esc_attr($opt) . '">' . esc_html($opt) . '</option>';
                 }
@@ -275,24 +348,58 @@ class ICSF_Forms {
                 break;
             case 'radio':
                 foreach ($field['options'] as $idx => $opt) {
-                    echo '<label><input type="radio" name="' . $name . '" value="' . esc_attr($opt) . '" ' . ($idx === 0 ? $required : '') . ' /> ' . esc_html($opt) . '</label> ';
+                    echo '<label><input type="radio" name="' . $name . '" value="' . esc_attr($opt) . '" ' . ($idx === 0 ? $required : '') . ' ' . $attrs . ' /> ' . esc_html($opt) . '</label> ';
                 }
                 break;
             case 'checkbox':
                 foreach ($field['options'] as $opt) {
-                    echo '<label><input type="checkbox" name="' . $name . '[]" value="' . esc_attr($opt) . '" /> ' . esc_html($opt) . '</label> ';
+                    echo '<label><input type="checkbox" name="' . $name . '[]" value="' . esc_attr($opt) . '" ' . $attrs . ' /> ' . esc_html($opt) . '</label> ';
                 }
+                break;
+            case 'hidden':
+                echo '<input type="hidden" name="' . $name . '" value="' . $value . '" ' . $attrs . ' />';
                 break;
             case 'email':
             case 'tel':
             case 'number':
             case 'date':
             case 'url':
-                echo '<input type="' . esc_attr($field['type']) . '" name="' . $name . '" placeholder="' . $placeholder . '" ' . $required . ' />';
+            case 'password':
+                echo '<input type="' . esc_attr($field['type']) . '" name="' . $name . '" value="' . $value . '" placeholder="' . $placeholder . '" ' . $required . ' ' . $attrs . ' />';
                 break;
             default:
-                echo '<input type="text" name="' . $name . '" placeholder="' . $placeholder . '" ' . $required . ' />';
+                echo '<input type="text" name="' . $name . '" value="' . $value . '" placeholder="' . $placeholder . '" ' . $required . ' ' . $attrs . ' />';
         }
+    }
+
+    private function build_field_attributes(array $field): string {
+        $attrs = [];
+
+        if (isset($field['min_length']) && $field['min_length'] !== '') {
+            $attrs[] = 'minlength="' . esc_attr((string) absint($field['min_length'])) . '"';
+        }
+
+        if (isset($field['max_length']) && $field['max_length'] !== '') {
+            $attrs[] = 'maxlength="' . esc_attr((string) absint($field['max_length'])) . '"';
+        }
+
+        if (isset($field['min']) && $field['min'] !== '') {
+            $attrs[] = 'min="' . esc_attr((string) $field['min']) . '"';
+        }
+
+        if (isset($field['max']) && $field['max'] !== '') {
+            $attrs[] = 'max="' . esc_attr((string) $field['max']) . '"';
+        }
+
+        if (isset($field['step']) && $field['step'] !== '') {
+            $attrs[] = 'step="' . esc_attr((string) $field['step']) . '"';
+        }
+
+        if (!empty($field['validation_pattern'])) {
+            $attrs[] = 'pattern="' . esc_attr((string) $field['validation_pattern']) . '"';
+        }
+
+        return implode(' ', $attrs);
     }
 
     private function build_fields_text(array $form, array $data): string {
