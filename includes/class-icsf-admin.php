@@ -20,6 +20,7 @@ class ICSF_Admin {
 
         add_action('admin_post_icsf_save_form', [$this, 'handle_save_form']);
         add_action('admin_post_icsf_delete_form', [$this, 'handle_delete_form']);
+        add_action('admin_post_icsf_duplicate_form', [$this, 'handle_duplicate_form']);
         add_action('admin_post_icsf_export_logs', [$this, 'handle_export_logs']);
         add_action('admin_post_icsf_save_modules', [$this, 'handle_save_modules']);
     }
@@ -27,19 +28,19 @@ class ICSF_Admin {
     public function register_menu(): void {
         add_menu_page('Ikonic Form Builder', 'Ikonic Form Builder', 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page'], 'dashicons-superhero', 58);
         add_submenu_page('ikonic-contact-form-builder', 'Forms', 'Forms', 'manage_options', 'ikonic-contact-form-builder', [$this, 'render_forms_page']);
+        add_submenu_page('ikonic-contact-form-builder', 'Entries', 'Entries', 'manage_options', 'ikonic-contact-entries', [$this, 'render_entries_page']);
         add_submenu_page('ikonic-contact-form-builder', 'Analytics', 'Analytics', 'manage_options', 'ikonic-contact-analytics', [$this, 'render_analytics_page']);
         add_submenu_page('ikonic-contact-form-builder', 'SMTP Settings', 'SMTP Settings', 'manage_options', 'ikonic-contact-smtp-settings', [$this, 'render_smtp_page']);
         add_submenu_page('ikonic-contact-form-builder', 'UI Studio & Modules', 'UI Studio & Modules', 'manage_options', 'ikonic-contact-modules', [$this, 'render_modules_page']);
     }
 
     public function enqueue_admin_assets(string $hook): void {
-        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules', 'ikonic-form-builder_page_ikonic-contact-smtp-settings'];
+        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-entries', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules', 'ikonic-form-builder_page_ikonic-contact-smtp-settings'];
         if (!in_array($hook, $allowed, true)) {
             return;
         }
 
-        $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25);overflow:hidden}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-enterprise .icsf-title{font-size:26px;font-weight:700;margin:0;color:#f4f8ff !important}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700;color:#f4f8ff}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:980px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}.icsf-enterprise .notice,.icsf-enterprise .updated,.icsf-enterprise .error{background:#fff;color:#1d2327;border-left:4px solid #2271b1;margin:10px 0;border-radius:6px}';
-
+        $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25);overflow:hidden}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-enterprise .icsf-title{font-size:26px;font-weight:700;margin:0;color:#f4f8ff !important}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700;color:#f4f8ff}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:1080px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}.icsf-enterprise .notice,.icsf-enterprise .updated,.icsf-enterprise .error{background:#fff;color:#1d2327;border-left:4px solid #2271b1;margin:10px 0;border-radius:6px}.icsf-code{font-family:ui-monospace,Menlo,monospace;background:#f2f6ff;border:1px solid #d8e1f5;border-radius:8px;padding:8px}';
         wp_register_style('icsf-admin-inline', false);
         wp_enqueue_style('icsf-admin-inline');
         wp_add_inline_style('icsf-admin-inline', $css);
@@ -110,7 +111,7 @@ class ICSF_Admin {
     public function render_modules_page(): void {
         $modules = $this->plugin->get_modules();
         echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Platform Orchestration</div><h1 class="icsf-title">UI Studio & Modules</h1></div><span class="icsf-chip">Feature Flags</span></div>';
-        echo '<p>Enable enterprise modules for frontend experiences, admin controls, analytics, and anti-spam automation.</p></div>';
+        echo '<p>Enable enterprise modules for frontend experiences, admin controls, analytics, entries, anti-spam, and automation.</p></div>';
 
         echo '<div class="icsf-panel"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_modules" />';
@@ -121,25 +122,7 @@ class ICSF_Admin {
         }
 
         submit_button('Save Module Matrix');
-        echo '</form></div></div>';
-    }
-
-    public function handle_save_modules(): void {
-        if (!$this->plugin->verify_admin_request()) {
-            return;
-        }
-
-        $current = $this->plugin->get_modules();
-        $incoming = isset($_POST['modules']) && is_array($_POST['modules']) ? wp_unslash($_POST['modules']) : [];
-        $updated = [];
-
-        foreach ($current as $key => $_) {
-            $updated[$key] = !empty($incoming[$key]) ? 1 : 0;
-        }
-
-        $this->plugin->save_modules($updated);
-        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-modules'));
-        exit;
+        echo '</form></div>';
     }
 
     public function render_forms_page(): void {
@@ -149,21 +132,25 @@ class ICSF_Admin {
         $active = wp_parse_args($active, $this->plugin->default_form());
 
         echo '<div class="wrap">';
-        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Builder</div><h1 class="icsf-title">Forms Studio</h1></div><span class="icsf-chip">v6 Enterprise</span></div>';
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Builder</div><h1 class="icsf-title">Forms Studio</h1></div><span class="icsf-chip">v7 Enterprise</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
         echo '<div class="icsf-stat"><h3>Current Theme</h3><p style="font-size:18px">' . esc_html((string) $active['theme']) . '</p></div>';
         echo '<div class="icsf-stat"><h3>Current Form</h3><p style="font-size:18px">' . esc_html((string) $active['name']) . '</p></div>';
-        echo '<div class="icsf-stat"><h3>Layout</h3><p>' . esc_html((string) strtoupper((string) $active['layout'])) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Status</h3><p>' . esc_html(strtoupper((string) $active['status'])) . '</p></div>';
         echo '</div></div>';
 
-        echo '<div class="icsf-panel"><h2>Saved Forms Registry</h2><div class="icsf-table"><table class="widefat striped"><thead><tr><th>Name</th><th>ID</th><th>Shortcode</th><th>Actions</th></tr></thead><tbody>';
+        echo '<div class="icsf-panel"><h2>Saved Forms Registry</h2><div class="icsf-table"><table class="widefat striped"><thead><tr><th>Name</th><th>ID</th><th>Status</th><th>Shortcode</th><th>Actions</th></tr></thead><tbody>';
         if (empty($forms)) {
-            echo '<tr><td colspan="4">No forms yet.</td></tr>';
+            echo '<tr><td colspan="5">No forms yet.</td></tr>';
         } else {
             foreach ($forms as $form) {
-                echo '<tr><td>' . esc_html($form['name']) . '</td><td>' . esc_html($form['id']) . '</td><td><code>[ikonic_contact_form id="' . esc_html($form['id']) . '"]</code></td><td>';
+                echo '<tr><td>' . esc_html($form['name']) . '</td><td>' . esc_html($form['id']) . '</td><td>' . esc_html((string) ($form['status'] ?? 'active')) . '</td><td><code>[ikonic_contact_form id="' . esc_html($form['id']) . '"]</code></td><td>';
                 echo '<a class="button button-small" href="' . esc_url(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($form['id']))) . '">Edit</a> ';
+                echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline;">';
+                echo '<input type="hidden" name="action" value="icsf_duplicate_form" /><input type="hidden" name="form_id" value="' . esc_attr($form['id']) . '" />';
+                wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
+                echo '<button class="button button-small" type="submit">Duplicate</button></form> ';
                 echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline;">';
                 echo '<input type="hidden" name="action" value="icsf_delete_form" /><input type="hidden" name="form_id" value="' . esc_attr($form['id']) . '" />';
                 wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
@@ -179,23 +166,49 @@ class ICSF_Admin {
         echo '<input type="hidden" name="original_form_id" value="' . esc_attr($edit_id) . '" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
 
-        echo '<table class="form-table">';
+        echo '<h3>Core</h3><table class="form-table">';
         echo '<tr><th>Form Name</th><td><input type="text" class="regular-text" name="form_name" value="' . esc_attr($active['name']) . '" required /></td></tr>';
         echo '<tr><th>Form ID</th><td><input type="text" class="regular-text" name="form_id" value="' . esc_attr($active['id']) . '" /></td></tr>';
-        echo '<tr><th>Recipient Email</th><td><input type="email" class="regular-text" name="to_email" value="' . esc_attr($active['to_email']) . '" /></td></tr>';
-        echo '<tr><th>Subject Prefix</th><td><input type="text" class="regular-text" name="subject_prefix" value="' . esc_attr($active['subject_prefix']) . '" /></td></tr>';
-        echo '<tr><th>Success Message</th><td><input type="text" class="regular-text" name="success_message" value="' . esc_attr($active['success_message']) . '" /></td></tr>';
+        echo '<tr><th>Status</th><td><select name="status"><option value="active" ' . selected($active['status'], 'active', false) . '>Active</option><option value="inactive" ' . selected($active['status'], 'inactive', false) . '>Inactive</option></select></td></tr>';
         echo '<tr><th>Theme</th><td><select name="theme">';
         foreach ($this->plugin->theme_options() as $key => $label) {
             echo '<option value="' . esc_attr($key) . '" ' . selected($active['theme'], $key, false) . '>' . esc_html($label) . '</option>';
         }
         echo '</select></td></tr>';
-        echo '<tr><th>Button Text</th><td><input type="text" class="regular-text" name="button_text" value="' . esc_attr($active['button_text']) . '" /></td></tr>';
         echo '<tr><th>Layout</th><td><select name="layout"><option value="grid" ' . selected($active['layout'], 'grid', false) . '>Grid</option><option value="single" ' . selected($active['layout'], 'single', false) . '>Single Column</option></select></td></tr>';
+        echo '<tr><th>Button Text</th><td><input type="text" class="regular-text" name="button_text" value="' . esc_attr($active['button_text']) . '" /></td></tr>';
         echo '<tr><th>Enable Honeypot</th><td><label><input type="checkbox" name="enable_honeypot" value="1" ' . checked(!empty($active['enable_honeypot']), true, false) . ' /> Anti-spam trap</label></td></tr>';
+        echo '<tr><th>Max submissions/hour per IP</th><td><input type="number" min="1" max="1000" name="max_submissions_per_hour" value="' . esc_attr((string) $active['max_submissions_per_hour']) . '" /></td></tr>';
+        echo '</table>';
+
+        echo '<h3>Submission Behavior</h3><table class="form-table">';
+        echo '<tr><th>Success Message</th><td><input type="text" class="regular-text" name="success_message" value="' . esc_attr($active['success_message']) . '" /></td></tr>';
+        echo '<tr><th>Submit Action</th><td><select name="submit_action"><option value="message" ' . selected($active['submit_action'], 'message', false) . '>Show Message</option><option value="redirect" ' . selected($active['submit_action'], 'redirect', false) . '>Redirect</option></select></td></tr>';
+        echo '<tr><th>Redirect URL</th><td><input type="url" class="regular-text" name="redirect_url" value="' . esc_attr($active['redirect_url']) . '" /></td></tr>';
+        echo '</table>';
+
+        echo '<h3>Admin Notification</h3><table class="form-table">';
+        echo '<tr><th>Recipient Email</th><td><input type="email" class="regular-text" name="to_email" value="' . esc_attr($active['to_email']) . '" /></td></tr>';
+        echo '<tr><th>Enable Admin Notify</th><td><label><input type="checkbox" name="admin_notify_enabled" value="1" ' . checked(!empty($active['admin_notify_enabled']), true, false) . ' /> Send email to admin</label></td></tr>';
+        echo '<tr><th>Subject Prefix</th><td><input type="text" class="regular-text" name="subject_prefix" value="' . esc_attr($active['subject_prefix']) . '" /></td></tr>';
+        echo '<tr><th>Subject Template</th><td><input type="text" class="regular-text" name="admin_subject_template" value="' . esc_attr($active['admin_subject_template']) . '" /></td></tr>';
+        echo '<tr><th>Body Template</th><td><textarea name="admin_body_template" rows="5" class="large-text">' . esc_textarea($active['admin_body_template']) . '</textarea><p class="description">Tokens: {form_name}, {fields}, {site_name}, {field_name}</p></td></tr>';
+        echo '<tr><th>Store Entries</th><td><label><input type="checkbox" name="store_entries" value="1" ' . checked(!empty($active['store_entries']), true, false) . ' /> Keep records in Entries/Analytics</label></td></tr>';
+        echo '</table>';
+
+        echo '<h3>Automation Hooks</h3><table class="form-table">';
+        echo '<tr><th>Enable Webhook</th><td><label><input type="checkbox" name="webhook_enabled" value="1" ' . checked(!empty($active['webhook_enabled']), true, false) . ' /> Send JSON payload to webhook</label></td></tr>';
+        echo '<tr><th>Webhook URL</th><td><input type="url" class="regular-text" name="webhook_url" value="' . esc_attr($active['webhook_url']) . '" /></td></tr>';
+
+        echo '<h3>Auto-responder</h3><table class="form-table">';
+        echo '<tr><th>Enable Auto-responder</th><td><label><input type="checkbox" name="autoresponder_enabled" value="1" ' . checked(!empty($active['autoresponder_enabled']), true, false) . ' /> Send confirmation to user</label></td></tr>';
+        echo '<tr><th>User Email Field Name</th><td><input type="text" class="regular-text" name="autoresponder_email_field" value="' . esc_attr($active['autoresponder_email_field']) . '" /></td></tr>';
+        echo '<tr><th>Auto-responder Subject</th><td><input type="text" class="regular-text" name="autoresponder_subject" value="' . esc_attr($active['autoresponder_subject']) . '" /></td></tr>';
+        echo '<tr><th>Auto-responder Body</th><td><textarea name="autoresponder_body" rows="5" class="large-text">' . esc_textarea($active['autoresponder_body']) . '</textarea></td></tr>';
         echo '</table>';
 
         echo '<h3>Field Matrix</h3>';
+        echo '<div class="icsf-code">Supported types: text, email, textarea, select, radio, checkbox, tel, number, date, url</div>';
         echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Placeholder</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
         $rows = !empty($active['fields']) ? $active['fields'] : $this->plugin->default_form()['fields'];
         foreach ($rows as $i => $field) {
@@ -208,7 +221,7 @@ class ICSF_Admin {
             echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][required]" value="' . esc_attr($field['required'] ? '1' : '0') . '" /></td>';
             echo '</tr>';
         }
-        for ($n = 0; $n < 6; $n++) {
+        for ($n = 0; $n < 8; $n++) {
             $idx = count($rows) + $n;
             echo '<tr><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][label]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][name]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][type]" value="text" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][placeholder]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][options]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][required]" value="0" /></td></tr>';
         }
@@ -216,6 +229,40 @@ class ICSF_Admin {
 
         submit_button('Save Enterprise Form');
         echo '</form></div></div>';
+    }
+
+    public function render_entries_page(): void {
+        $form_filter = isset($_GET['form_id']) ? sanitize_key(wp_unslash($_GET['form_id'])) : '';
+        $logs = $this->plugin->get_logs();
+        $forms = $this->plugin->get_forms();
+
+        if ($form_filter !== '') {
+            $logs = array_values(array_filter($logs, static function ($row) use ($form_filter) {
+                return (string) ($row['form_id'] ?? '') === $form_filter;
+            }));
+        }
+
+        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Operational Records</div><h1 class="icsf-title">Entries Manager</h1></div><span class="icsf-chip">Data Layer</span></div>';
+        echo '<div class="icsf-grid"><div class="icsf-stat"><h3>Total Entries</h3><p>' . esc_html((string) count($logs)) . '</p></div><div class="icsf-stat"><h3>Filter</h3><p style="font-size:16px">' . esc_html($form_filter ?: 'All Forms') . '</p></div></div></div>';
+
+        echo '<div class="icsf-panel"><form method="get" style="margin-bottom:12px;">';
+        echo '<input type="hidden" name="page" value="ikonic-contact-entries" />';
+        echo '<select name="form_id"><option value="">All Forms</option>';
+        foreach ($forms as $id => $form) {
+            echo '<option value="' . esc_attr((string) $id) . '" ' . selected($form_filter, (string) $id, false) . '>' . esc_html((string) $form['name']) . '</option>';
+        }
+        echo '</select> <button class="button">Apply Filter</button></form>';
+
+        echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Date</th><th>Form</th><th>Status</th><th>IP</th><th>User Agent</th><th>Payload</th></tr></thead><tbody>';
+        $rows = array_slice(array_reverse($logs), 0, 200);
+        if (empty($rows)) {
+            echo '<tr><td colspan="6">No entries.</td></tr>';
+        } else {
+            foreach ($rows as $row) {
+                echo '<tr><td>' . esc_html((string) ($row['created_at'] ?? '')) . '</td><td>' . esc_html((string) ($row['form_id'] ?? '')) . '</td><td>' . esc_html((string) ($row['status'] ?? '')) . '</td><td>' . esc_html((string) ($row['ip'] ?? '')) . '</td><td>' . esc_html((string) ($row['ua'] ?? '')) . '</td><td><code>' . esc_html(wp_json_encode((array) ($row['fields'] ?? []))) . '</code></td></tr>';
+            }
+        }
+        echo '</tbody></table></div></div></div>';
     }
 
     public function handle_save_form(): void {
@@ -257,6 +304,7 @@ class ICSF_Admin {
         $forms[$id] = [
             'id' => $id,
             'name' => $name,
+            'status' => isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : 'active',
             'to_email' => isset($_POST['to_email']) ? sanitize_email(wp_unslash($_POST['to_email'])) : '',
             'subject_prefix' => isset($_POST['subject_prefix']) ? sanitize_text_field(wp_unslash($_POST['subject_prefix'])) : '[Contact Form]',
             'success_message' => isset($_POST['success_message']) ? sanitize_text_field(wp_unslash($_POST['success_message'])) : 'Thanks! Your message has been sent.',
@@ -264,11 +312,51 @@ class ICSF_Admin {
             'button_text' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : 'Transmit Message',
             'layout' => isset($_POST['layout']) ? sanitize_key(wp_unslash($_POST['layout'])) : 'grid',
             'enable_honeypot' => !empty($_POST['enable_honeypot']) ? 1 : 0,
+            'max_submissions_per_hour' => isset($_POST['max_submissions_per_hour']) ? max(1, absint($_POST['max_submissions_per_hour'])) : 30,
+            'submit_action' => isset($_POST['submit_action']) ? sanitize_key(wp_unslash($_POST['submit_action'])) : 'message',
+            'redirect_url' => isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '',
+            'store_entries' => !empty($_POST['store_entries']) ? 1 : 0,
+            'admin_notify_enabled' => !empty($_POST['admin_notify_enabled']) ? 1 : 0,
+            'admin_subject_template' => isset($_POST['admin_subject_template']) ? sanitize_text_field(wp_unslash($_POST['admin_subject_template'])) : '[{form_name}] New Submission',
+            'admin_body_template' => isset($_POST['admin_body_template']) ? sanitize_textarea_field(wp_unslash($_POST['admin_body_template'])) : "A new submission was received from {form_name}.\n\n{fields}",
+            'autoresponder_enabled' => !empty($_POST['autoresponder_enabled']) ? 1 : 0,
+            'autoresponder_email_field' => isset($_POST['autoresponder_email_field']) ? sanitize_key(wp_unslash($_POST['autoresponder_email_field'])) : 'your_email',
+            'autoresponder_subject' => isset($_POST['autoresponder_subject']) ? sanitize_text_field(wp_unslash($_POST['autoresponder_subject'])) : 'We received your message',
+            'autoresponder_body' => isset($_POST['autoresponder_body']) ? sanitize_textarea_field(wp_unslash($_POST['autoresponder_body'])) : '',
+            'webhook_enabled' => !empty($_POST['webhook_enabled']) ? 1 : 0,
+            'webhook_url' => isset($_POST['webhook_url']) ? esc_url_raw(wp_unslash($_POST['webhook_url'])) : '',
             'fields' => $fields,
         ];
 
+        $forms[$id] = wp_parse_args($forms[$id], $this->plugin->default_form());
+
         $this->plugin->save_forms($forms);
         wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($id)));
+        exit;
+    }
+
+    public function handle_duplicate_form(): void {
+        if (!$this->plugin->verify_admin_request()) {
+            return;
+        }
+
+        $form_id = isset($_POST['form_id']) ? sanitize_key(wp_unslash($_POST['form_id'])) : '';
+        $forms = $this->plugin->get_forms();
+        if ($form_id === '' || !isset($forms[$form_id])) {
+            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder'));
+            exit;
+        }
+
+        $base = $form_id . '-copy';
+        $new_id = $this->generate_unique_form_id($base, $forms);
+        $copy = $forms[$form_id];
+        $copy['id'] = $new_id;
+        $copy['name'] = (string) $copy['name'] . ' (Copy)';
+
+        $forms[$new_id] = $copy;
+        $this->plugin->save_forms($forms);
+
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($new_id)));
         exit;
     }
 
@@ -391,6 +479,24 @@ class ICSF_Admin {
             ]);
         }
         fclose($out);
+        exit;
+    }
+
+    public function handle_save_modules(): void {
+        if (!$this->plugin->verify_admin_request()) {
+            return;
+        }
+
+        $current = $this->plugin->get_modules();
+        $incoming = isset($_POST['modules']) && is_array($_POST['modules']) ? wp_unslash($_POST['modules']) : [];
+        $updated = [];
+
+        foreach ($current as $key => $_) {
+            $updated[$key] = !empty($incoming[$key]) ? 1 : 0;
+        }
+
+        $this->plugin->save_modules($updated);
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-modules'));
         exit;
     }
 

@@ -33,8 +33,8 @@ class ICSF_Plugin {
     public function add_log(array $entry): void {
         $logs = $this->get_logs();
         $logs[] = $entry;
-        if (count($logs) > 2000) {
-            $logs = array_slice($logs, -2000);
+        if (count($logs) > 5000) {
+            $logs = array_slice($logs, -5000);
         }
         update_option(self::LOGS_OPTION_KEY, $logs, false);
     }
@@ -72,6 +72,7 @@ class ICSF_Plugin {
         return [
             'id' => '',
             'name' => 'Contact Form',
+            'status' => 'active',
             'to_email' => '',
             'subject_prefix' => '[Contact Form]',
             'success_message' => 'Thanks! Your message has been sent.',
@@ -79,6 +80,19 @@ class ICSF_Plugin {
             'button_text' => 'Transmit Message',
             'layout' => 'grid',
             'enable_honeypot' => 1,
+            'max_submissions_per_hour' => 30,
+            'submit_action' => 'message',
+            'redirect_url' => '',
+            'store_entries' => 1,
+            'admin_notify_enabled' => 1,
+            'admin_subject_template' => '[{form_name}] New Submission',
+            'admin_body_template' => "A new submission was received from {form_name}.\n\n{fields}",
+            'autoresponder_enabled' => 0,
+            'autoresponder_email_field' => 'your_email',
+            'autoresponder_subject' => 'We received your message',
+            'autoresponder_body' => "Hi,\n\nThanks for contacting us. Our team will get back to you soon.\n\n- Team",
+            'webhook_enabled' => 0,
+            'webhook_url' => '',
             'fields' => [
                 ['label' => 'Your Name', 'name' => 'your_name', 'type' => 'text', 'required' => 1, 'placeholder' => 'Enter your name', 'options' => []],
                 ['label' => 'Your Email', 'name' => 'your_email', 'type' => 'email', 'required' => 1, 'placeholder' => 'Enter your email', 'options' => []],
@@ -92,7 +106,7 @@ class ICSF_Plugin {
             'minimal' => 'Minimal',
             'neo-glass' => 'Neo Glass',
             'cyber-neon' => 'Cyber Neon',
-            'aurora' => 'Aurora Gradient',
+            'aurora' => 'Aurora',
         ];
     }
 
@@ -144,6 +158,9 @@ class ICSF_Plugin {
             'backend_ui_studio' => 1,
             'analytics_advanced' => 1,
             'honeypot' => 1,
+            'entries_manager' => 1,
+            'autoresponder' => 1,
+            'webhook_gateway' => 0,
         ];
     }
 

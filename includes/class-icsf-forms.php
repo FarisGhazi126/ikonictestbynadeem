@@ -23,7 +23,7 @@ class ICSF_Forms {
             return;
         }
 
-        $css = '.icsf-wrap{max-width:860px;margin:28px auto;padding:28px;border-radius:20px}.icsf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.icsf-full{grid-column:1/-1}.icsf-wrap input,.icsf-wrap textarea,.icsf-wrap select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #c8d2e1;box-sizing:border-box}.icsf-wrap label{font-weight:600}.icsf-progress{height:8px;border-radius:8px;background:rgba(255,255,255,.22);overflow:hidden;margin-bottom:14px}.icsf-progress-bar{height:100%;background:linear-gradient(90deg,#00d4ff,#6f7dff)}.icsf-theme-minimal{background:#fff;border:1px solid #e8edf7;box-shadow:0 12px 30px rgba(10,40,90,.08)}.icsf-theme-neo-glass{background:rgba(8,11,26,.72);border:1px solid rgba(126,145,255,.35);backdrop-filter:blur(8px);color:#f5f9ff;box-shadow:0 14px 40px rgba(84,99,255,.25)}.icsf-theme-neo-glass input,.icsf-theme-neo-glass textarea,.icsf-theme-neo-glass select{background:rgba(255,255,255,.93)}.icsf-theme-cyber-neon{background:#0a1024;border:1px solid #00e1ff;box-shadow:0 0 0 1px rgba(0,225,255,.35),0 16px 46px rgba(0,225,255,.2);color:#dbf7ff}.icsf-theme-cyber-neon input,.icsf-theme-cyber-neon textarea,.icsf-theme-cyber-neon select{background:#101938;color:#dbf7ff;border-color:#2d3f77}.icsf-theme-aurora{background:linear-gradient(135deg,#121d4f,#0d6a7d,#4a267d);color:#fff;box-shadow:0 16px 50px rgba(58,74,180,.3)}.icsf-wrap button{padding:12px 22px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:linear-gradient(90deg,#5f77ff,#00d4ff);color:#fff}@media(max-width:700px){.icsf-grid{grid-template-columns:1fr}}';
+        $css = '.icsf-wrap{max-width:900px;margin:28px auto;padding:28px;border-radius:20px}.icsf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.icsf-full{grid-column:1/-1}.icsf-wrap input,.icsf-wrap textarea,.icsf-wrap select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #c8d2e1;box-sizing:border-box}.icsf-wrap label{font-weight:600}.icsf-progress{height:8px;border-radius:8px;background:rgba(255,255,255,.22);overflow:hidden;margin-bottom:14px}.icsf-progress-bar{height:100%;background:linear-gradient(90deg,#00d4ff,#6f7dff)}.icsf-theme-minimal{background:#fff;border:1px solid #e8edf7;box-shadow:0 12px 30px rgba(10,40,90,.08)}.icsf-theme-neo-glass{background:rgba(8,11,26,.72);border:1px solid rgba(126,145,255,.35);backdrop-filter:blur(8px);color:#f5f9ff;box-shadow:0 14px 40px rgba(84,99,255,.25)}.icsf-theme-neo-glass input,.icsf-theme-neo-glass textarea,.icsf-theme-neo-glass select{background:rgba(255,255,255,.93)}.icsf-theme-cyber-neon{background:#0a1024;border:1px solid #00e1ff;box-shadow:0 0 0 1px rgba(0,225,255,.35),0 16px 46px rgba(0,225,255,.2);color:#dbf7ff}.icsf-theme-cyber-neon input,.icsf-theme-cyber-neon textarea,.icsf-theme-cyber-neon select{background:#101938;color:#dbf7ff;border-color:#2d3f77}.icsf-theme-aurora{background:linear-gradient(135deg,#121d4f,#0d6a7d,#4a267d);color:#fff;box-shadow:0 16px 50px rgba(58,74,180,.3)}.icsf-wrap button{padding:12px 22px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:linear-gradient(90deg,#5f77ff,#00d4ff);color:#fff}@media(max-width:700px){.icsf-grid{grid-template-columns:1fr}}';
         wp_register_style('icsf-inline', false);
         wp_enqueue_style('icsf-inline');
         wp_add_inline_style('icsf-inline', $css);
@@ -98,6 +98,10 @@ class ICSF_Forms {
         $atts = shortcode_atts(['id' => ''], $atts, 'ikonic_contact_form');
         $form = $this->get_form((string) $atts['id']);
 
+        if (($form['status'] ?? 'active') !== 'active') {
+            return '<p>' . esc_html__('This form is currently unavailable.', 'ikonic-contact-smtp-form') . '</p>';
+        }
+
         $notice = '';
         if (isset($_GET['icsf_status'], $_GET['icsf_form_id']) && sanitize_key(wp_unslash($_GET['icsf_form_id'])) === $form['id']) {
             $status = sanitize_text_field(wp_unslash($_GET['icsf_status']));
@@ -120,9 +124,10 @@ class ICSF_Forms {
         echo '<input type="hidden" name="icsf_form_id" value="' . esc_attr($form['id']) . '" />';
         wp_nonce_field(ICSF_Plugin::SUBMIT_NONCE_PREFIX . $form['id'], 'icsf_nonce');
 
-        echo '<div class="icsf-grid">';
+        $grid_class = ($form['layout'] ?? 'grid') === 'single' ? 'icsf-single' : 'icsf-grid';
+        echo '<div class="' . esc_attr($grid_class) . '">';
         foreach ($form['fields'] as $field) {
-            $full = $field['type'] === 'textarea' ? 'icsf-full' : '';
+            $full = $field['type'] === 'textarea' || ($form['layout'] ?? '') === 'single' ? 'icsf-full' : '';
             echo '<p class="' . esc_attr($full) . '"><label>' . esc_html($field['label']) . '</label><br />';
             $this->render_field($field);
             echo '</p>';
@@ -149,6 +154,10 @@ class ICSF_Forms {
         $form_id = isset($_POST['icsf_form_id']) ? sanitize_key(wp_unslash($_POST['icsf_form_id'])) : '';
         $form = $this->get_form($form_id);
 
+        if (($form['status'] ?? 'active') !== 'active') {
+            $this->redirect('error', $form['id']);
+        }
+
         if (!isset($_POST['icsf_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['icsf_nonce'])), ICSF_Plugin::SUBMIT_NONCE_PREFIX . $form['id'])) {
             $this->analytics->log_submission($form['id'], [], 'error');
             $this->redirect('error', $form['id']);
@@ -157,6 +166,11 @@ class ICSF_Forms {
         $modules = $this->plugin->get_modules();
         if (!empty($form['enable_honeypot']) && !empty($modules['honeypot']) && !empty($_POST['icsf_hp'])) {
             $this->analytics->log_submission($form['id'], [], 'blocked_honeypot');
+            $this->redirect('error', $form['id']);
+        }
+
+        if (!$this->rate_limit_check($form)) {
+            $this->analytics->log_submission($form['id'], [], 'rate_limited');
             $this->redirect('error', $form['id']);
         }
 
@@ -192,19 +206,54 @@ class ICSF_Forms {
             $to = get_option('admin_email');
         }
 
-        $subject = trim($form['subject_prefix'] . ' ' . $form['name']);
-        $body = "Form: {$form['name']}\n";
-        foreach ($form['fields'] as $field) {
-            $body .= $field['label'] . ': ' . ($data[$field['name']] ?? '') . "\n";
-        }
+        $fields_text = $this->build_fields_text($form, $data);
 
         $headers = [
             'Content-Type: text/plain; charset=UTF-8',
             'From: ' . ($smtp['from_name'] ?: get_bloginfo('name')) . ' <' . ($smtp['from_email'] ?: get_option('admin_email')) . '>',
         ];
 
-        $sent = wp_mail($to, $subject, $body, $headers);
-        $this->analytics->log_submission($form['id'], $data, $sent ? 'success' : 'error');
+        $sent = true;
+
+        if (!empty($form['admin_notify_enabled'])) {
+            $subject = $this->replace_tokens((string) $form['admin_subject_template'], $form, $data);
+            $body = $this->replace_tokens((string) $form['admin_body_template'], $form, $data, $fields_text);
+            $sent = wp_mail($to, $subject, $body, $headers);
+        }
+
+        if (!empty($modules['autoresponder']) && !empty($form['autoresponder_enabled'])) {
+            $email_field = sanitize_key((string) $form['autoresponder_email_field']);
+            $recipient = isset($data[$email_field]) ? sanitize_email((string) $data[$email_field]) : '';
+            if (is_email($recipient)) {
+                $ar_subject = $this->replace_tokens((string) $form['autoresponder_subject'], $form, $data, $fields_text);
+                $ar_body = $this->replace_tokens((string) $form['autoresponder_body'], $form, $data, $fields_text);
+                wp_mail($recipient, $ar_subject, $ar_body, $headers);
+            }
+        }
+
+        $entry_payload = !empty($form['store_entries']) ? $data : [];
+        $this->analytics->log_submission($form['id'], $entry_payload, $sent ? 'success' : 'error');
+
+
+        if (!empty($modules['webhook_gateway']) && !empty($form['webhook_enabled']) && !empty($form['webhook_url'])) {
+            wp_remote_post(esc_url_raw((string) $form['webhook_url']), [
+                'timeout' => 8,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => wp_json_encode([
+                    'form_id' => $form['id'],
+                    'form_name' => $form['name'],
+                    'submitted_at' => current_time('mysql'),
+                    'status' => $sent ? 'success' : 'error',
+                    'fields' => $data,
+                ]),
+            ]);
+        }
+
+        if ($sent && ($form['submit_action'] ?? 'message') === 'redirect' && !empty($form['redirect_url'])) {
+            wp_safe_redirect(esc_url_raw((string) $form['redirect_url']));
+            exit;
+        }
+
         $this->redirect($sent ? 'success' : 'error', $form['id']);
     }
 
@@ -244,6 +293,46 @@ class ICSF_Forms {
             default:
                 echo '<input type="text" name="' . $name . '" placeholder="' . $placeholder . '" ' . $required . ' />';
         }
+    }
+
+    private function build_fields_text(array $form, array $data): string {
+        $lines = [];
+        foreach ($form['fields'] as $field) {
+            $label = (string) $field['label'];
+            $val = (string) ($data[$field['name']] ?? '');
+            $lines[] = $label . ': ' . $val;
+        }
+        return implode("\n", $lines);
+    }
+
+    private function replace_tokens(string $text, array $form, array $data, string $fields_text = ''): string {
+        $map = [
+            '{form_name}' => (string) ($form['name'] ?? ''),
+            '{fields}' => $fields_text !== '' ? $fields_text : $this->build_fields_text($form, $data),
+            '{site_name}' => (string) get_bloginfo('name'),
+        ];
+        foreach ($data as $key => $value) {
+            $map['{' . $key . '}'] = (string) $value;
+        }
+        return strtr($text, $map);
+    }
+
+    private function rate_limit_check(array $form): bool {
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+        if ($ip === '') {
+            return true;
+        }
+
+        $max = isset($form['max_submissions_per_hour']) ? max(1, absint($form['max_submissions_per_hour'])) : 30;
+        $key = 'icsf_rate_' . md5($form['id'] . '|' . $ip);
+        $count = (int) get_transient($key);
+
+        if ($count >= $max) {
+            return false;
+        }
+
+        set_transient($key, $count + 1, HOUR_IN_SECONDS);
+        return true;
     }
 
     private function redirect(string $status, string $form_id): void {
