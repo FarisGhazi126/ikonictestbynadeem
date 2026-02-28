@@ -41,7 +41,7 @@ class ICSF_Admin {
         }
 
         $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25);overflow:hidden}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-enterprise .icsf-title{font-size:26px;font-weight:700;margin:0;color:#f4f8ff !important}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700;color:#f4f8ff}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:1080px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}.icsf-enterprise .notice,.icsf-enterprise .updated,.icsf-enterprise .error{background:#fff;color:#1d2327;border-left:4px solid #2271b1;margin:10px 0;border-radius:6px}.icsf-code{font-family:ui-monospace,Menlo,monospace;background:#f2f6ff;border:1px solid #d8e1f5;border-radius:8px;padding:8px}';
-        $css .= '.icsf-help{color:#5f6b85;margin:4px 0 0}.icsf-builder-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.icsf-builder-nav a{text-decoration:none;padding:6px 10px;border-radius:999px;background:#eef3ff;border:1px solid #d8e3fb;color:#1d4a9e;font-weight:600}.icsf-section{border:1px solid #e7ecf7;border-radius:10px;padding:14px;margin-bottom:14px;background:#fcfdff}.icsf-section h3{margin-top:0;margin-bottom:6px}.icsf-section .form-table{margin-top:6px}.icsf-field-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-top:8px}.icsf-field-types span{background:#fff;border:1px solid #dbe5f8;border-radius:8px;padding:6px 8px;font-size:12px;text-align:center}';
+        $css .= '.icsf-help{color:#5f6b85;margin:4px 0 0}.icsf-builder-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.icsf-builder-nav a{text-decoration:none;padding:6px 10px;border-radius:999px;background:#eef3ff;border:1px solid #d8e3fb;color:#1d4a9e;font-weight:600}.icsf-section{border:1px solid #e7ecf7;border-radius:10px;padding:14px;margin-bottom:14px;background:#fcfdff}.icsf-section h3{margin-top:0;margin-bottom:6px}.icsf-section .form-table{margin-top:6px}.icsf-field-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-top:8px}.icsf-field-types span{background:#fff;border:1px solid #dbe5f8;border-radius:8px;padding:6px 8px;font-size:12px;text-align:center}.icsf-page-tabs{margin:12px 0 16px}.icsf-page-tabs .nav-tab{border-radius:8px 8px 0 0}.icsf-page-tabs .nav-tab-active{background:#fff;border-bottom-color:#fff}';
         wp_register_style('icsf-admin-inline', false);
         wp_enqueue_style('icsf-admin-inline');
         wp_add_inline_style('icsf-admin-inline', $css);
@@ -95,6 +95,7 @@ class ICSF_Admin {
         $smtp = $this->plugin->get_smtp_settings();
         echo '<div class="wrap">';
         $this->render_admin_notice();
+        $this->render_page_tabs('ikonic-contact-smtp-settings');
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Mail Gateway</div><h1 class="icsf-title">SMTP Control Tower</h1></div><span class="icsf-chip">Transport Layer</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>SMTP State</h3><p>' . (!empty($smtp['enable_smtp']) ? 'On' : 'Off') . '</p></div>';
@@ -114,6 +115,7 @@ class ICSF_Admin {
         $modules = $this->plugin->get_modules();
         echo '<div class="wrap">';
         $this->render_admin_notice();
+        $this->render_page_tabs('ikonic-contact-modules');
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Platform Orchestration</div><h1 class="icsf-title">UI Studio & Modules</h1></div><span class="icsf-chip">Feature Flags</span></div>';
         echo '<p>Enable enterprise modules for frontend experiences, admin controls, analytics, entries, anti-spam, and automation.</p></div>';
 
@@ -149,6 +151,7 @@ class ICSF_Admin {
 
         echo '<div class="wrap">';
         $this->render_admin_notice();
+        $this->render_page_tabs('ikonic-contact-form-builder');
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Builder</div><h1 class="icsf-title">Forms Studio</h1></div><span class="icsf-chip">v7 Enterprise</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
@@ -259,7 +262,10 @@ class ICSF_Admin {
             }));
         }
 
-        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Operational Records</div><h1 class="icsf-title">Entries Manager</h1></div><span class="icsf-chip">Data Layer</span></div>';
+        echo '<div class="wrap">';
+        $this->render_admin_notice();
+        $this->render_page_tabs('ikonic-contact-entries');
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Operational Records</div><h1 class="icsf-title">Entries Manager</h1></div><span class="icsf-chip">Data Layer</span></div>';
         echo '<div class="icsf-grid"><div class="icsf-stat"><h3>Total Entries</h3><p>' . esc_html((string) count($logs)) . '</p></div><div class="icsf-stat"><h3>Filter</h3><p style="font-size:16px">' . esc_html($form_filter ?: 'All Forms') . '</p></div></div></div>';
 
         echo '<div class="icsf-panel"><form method="get" style="margin-bottom:12px;">';
@@ -402,6 +408,7 @@ class ICSF_Admin {
 
         echo '<div class="wrap">';
         $this->render_admin_notice();
+        $this->render_page_tabs('ikonic-contact-analytics');
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Observability</div><h1 class="icsf-title">Enterprise Analytics Command Center</h1></div><span class="icsf-chip">Live Metrics</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>Total</h3><p>' . esc_html((string) $metrics['total']) . '</p></div>';
@@ -520,6 +527,24 @@ class ICSF_Admin {
         exit;
     }
 
+
+
+    private function render_page_tabs(string $active_page): void {
+        $tabs = [
+            'ikonic-contact-form-builder' => 'Forms',
+            'ikonic-contact-entries' => 'Entries',
+            'ikonic-contact-analytics' => 'Analytics',
+            'ikonic-contact-smtp-settings' => 'SMTP Settings',
+            'ikonic-contact-modules' => 'UI Studio & Modules',
+        ];
+
+        echo '<nav class="nav-tab-wrapper icsf-page-tabs" aria-label="Ikonic Form Builder Navigation">';
+        foreach ($tabs as $slug => $label) {
+            $active_class = $active_page === $slug ? ' nav-tab-active' : '';
+            echo '<a class="nav-tab' . esc_attr($active_class) . '" href="' . esc_url(admin_url('admin.php?page=' . $slug)) . '">' . esc_html($label) . '</a>';
+        }
+        echo '</nav>';
+    }
 
     private function render_admin_notice(): void {
         $notice = isset($_GET['icsf_notice']) ? sanitize_key(wp_unslash($_GET['icsf_notice'])) : '';
