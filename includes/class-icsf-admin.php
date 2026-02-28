@@ -574,6 +574,10 @@ class ICSF_Admin {
             'ikonic-contact-form-builder' => 'Forms',
             'ikonic-contact-entries' => 'Entries',
             'ikonic-contact-analytics' => 'Analytics',
+            'ikonic-contact-contacts' => 'Contacts',
+            'ikonic-contact-segments' => 'Segments',
+            'ikonic-contact-campaigns' => 'Campaigns',
+            'ikonic-contact-automations' => 'Automations',
             'ikonic-contact-smtp-settings' => 'SMTP Settings',
             'ikonic-contact-modules' => 'UI Studio & Modules',
         ];

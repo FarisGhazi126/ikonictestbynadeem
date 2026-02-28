@@ -304,6 +304,8 @@ class ICSF_Forms {
         $entry_payload = !empty($form['store_entries']) ? $data : [];
         $this->analytics->log_submission($form['id'], $entry_payload, $sent ? 'success' : 'error');
 
+        do_action('icsf_after_submission', $form, $data, (bool) $sent);
+
 
         if (!empty($modules['webhook_gateway']) && !empty($form['webhook_enabled']) && !empty($form['webhook_url'])) {
             wp_remote_post(esc_url_raw((string) $form['webhook_url']), [
