@@ -33,12 +33,13 @@ class ICSF_Admin {
     }
 
     public function enqueue_admin_assets(string $hook): void {
-        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules'];
+        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules', 'ikonic-form-builder_page_ikonic-contact-smtp-settings'];
         if (!in_array($hook, $allowed, true)) {
             return;
         }
 
-        $css = '.icsf-admin-shell{background:linear-gradient(145deg,#0d1228,#111a3b);color:#f4f7ff;padding:20px;border-radius:16px;margin:10px 0}.icsf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.icsf-card{background:rgba(255,255,255,.08);border:1px solid rgba(112,132,255,.35);padding:14px;border-radius:12px}.icsf-card h3{margin:0 0 6px;color:#cfe6ff}.icsf-card p{margin:0;font-size:20px;font-weight:700}.icsf-module{padding:10px;border:1px solid #d9e0f0;border-radius:8px;background:#fff;margin-bottom:8px}';
+        $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25)}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-title{font-size:26px;font-weight:700;margin:0}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:980px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}';
+
         wp_register_style('icsf-admin-inline', false);
         wp_enqueue_style('icsf-admin-inline');
         wp_add_inline_style('icsf-admin-inline', $css);
@@ -75,7 +76,7 @@ class ICSF_Admin {
         $key = $args['key'];
 
         if ($key === 'enable_smtp') {
-            echo '<label><input type="checkbox" name="' . esc_attr(ICSF_Plugin::SMTP_OPTION_KEY) . '[' . esc_attr($key) . ']" value="1" ' . checked(!empty($smtp[$key]), true, false) . ' /> Enable SMTP</label>';
+            echo '<label><input type="checkbox" name="' . esc_attr(ICSF_Plugin::SMTP_OPTION_KEY) . '[' . esc_attr($key) . ']" value="1" ' . checked(!empty($smtp[$key]), true, false) . ' /> Enable SMTP Delivery</label>';
             return;
         }
 
@@ -84,27 +85,38 @@ class ICSF_Admin {
     }
 
     public function render_smtp_page(): void {
-        echo '<div class="wrap"><h1>SMTP Settings</h1><form method="post" action="options.php">';
+        $smtp = $this->plugin->get_smtp_settings();
+        echo '<div class="wrap">';
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Mail Gateway</div><h1 class="icsf-title">SMTP Control Tower</h1></div><span class="icsf-chip">Transport Layer</span></div>';
+        echo '<div class="icsf-grid">';
+        echo '<div class="icsf-stat"><h3>SMTP State</h3><p>' . (!empty($smtp['enable_smtp']) ? 'On' : 'Off') . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Host</h3><p style="font-size:18px">' . esc_html((string) ($smtp['smtp_host'] ?: 'Not set')) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Security</h3><p>' . esc_html(strtoupper((string) $smtp['smtp_secure'])) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Port</h3><p>' . esc_html((string) $smtp['smtp_port']) . '</p></div>';
+        echo '</div></div>';
+
+        echo '<div class="icsf-panel"><h2>SMTP Configuration</h2><form method="post" action="options.php">';
         settings_fields('icsf_smtp_settings_group');
         do_settings_sections('ikonic-contact-smtp-settings');
-        submit_button();
-        echo '</form></div>';
+        submit_button('Save SMTP Profile');
+        echo '</form></div></div>';
     }
 
     public function render_modules_page(): void {
         $modules = $this->plugin->get_modules();
-        echo '<div class="wrap"><h1>UI Studio & Modules</h1>';
-        echo '<p>Turn platform modules on/off for frontend and backend behavior.</p>';
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Platform Orchestration</div><h1 class="icsf-title">UI Studio & Modules</h1></div><span class="icsf-chip">Feature Flags</span></div>';
+        echo '<p>Enable enterprise modules for frontend experiences, admin controls, analytics, and anti-spam automation.</p></div>';
+
+        echo '<div class="icsf-panel"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_modules" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
 
         foreach ($modules as $key => $enabled) {
-            echo '<div class="icsf-module"><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> ' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</label></div>';
+            echo '<div class="icsf-module"><div><strong>' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</strong><br><span style="color:#65789b;font-size:12px">Module toggle for enterprise behavior</span></div><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> Enabled</label></div>';
         }
 
-        submit_button('Save Modules');
-        echo '</form></div>';
+        submit_button('Save Module Matrix');
+        echo '</form></div></div>';
     }
 
     public function handle_save_modules(): void {
@@ -131,14 +143,16 @@ class ICSF_Admin {
         $active = $edit_id && isset($forms[$edit_id]) ? $forms[$edit_id] : $this->plugin->default_form();
         $active = wp_parse_args($active, $this->plugin->default_form());
 
-        echo '<div class="wrap"><h1>Forms</h1>';
-        echo '<div class="icsf-admin-shell"><div class="icsf-cards">';
-        echo '<div class="icsf-card"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
-        echo '<div class="icsf-card"><h3>Default Theme</h3><p>' . esc_html($active['theme']) . '</p></div>';
-        echo '<div class="icsf-card"><h3>Current Form</h3><p>' . esc_html($active['name']) . '</p></div>';
+        echo '<div class="wrap">';
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Builder</div><h1 class="icsf-title">Forms Studio</h1></div><span class="icsf-chip">v6 Enterprise</span></div>';
+        echo '<div class="icsf-grid">';
+        echo '<div class="icsf-stat"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Current Theme</h3><p style="font-size:18px">' . esc_html((string) $active['theme']) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Current Form</h3><p style="font-size:18px">' . esc_html((string) $active['name']) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Layout</h3><p>' . esc_html((string) strtoupper((string) $active['layout'])) . '</p></div>';
         echo '</div></div>';
 
-        echo '<h2>Saved Forms</h2><table class="widefat striped"><thead><tr><th>Name</th><th>ID</th><th>Shortcode</th><th>Actions</th></tr></thead><tbody>';
+        echo '<div class="icsf-panel"><h2>Saved Forms Registry</h2><div class="icsf-table"><table class="widefat striped"><thead><tr><th>Name</th><th>ID</th><th>Shortcode</th><th>Actions</th></tr></thead><tbody>';
         if (empty($forms)) {
             echo '<tr><td colspan="4">No forms yet.</td></tr>';
         } else {
@@ -152,9 +166,9 @@ class ICSF_Admin {
                 echo '</td></tr>';
             }
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div></div>';
 
-        echo '<hr><h2>Futuristic Form Builder</h2>';
+        echo '<div class="icsf-panel icsf-form-shell"><h2>Enterprise Form Builder</h2>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_form" />';
         echo '<input type="hidden" name="original_form_id" value="' . esc_attr($edit_id) . '" />';
@@ -176,8 +190,8 @@ class ICSF_Admin {
         echo '<tr><th>Enable Honeypot</th><td><label><input type="checkbox" name="enable_honeypot" value="1" ' . checked(!empty($active['enable_honeypot']), true, false) . ' /> Anti-spam trap</label></td></tr>';
         echo '</table>';
 
-        echo '<h3>Fields</h3>';
-        echo '<table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Placeholder</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
+        echo '<h3>Field Matrix</h3>';
+        echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Placeholder</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
         $rows = !empty($active['fields']) ? $active['fields'] : $this->plugin->default_form()['fields'];
         foreach ($rows as $i => $field) {
             echo '<tr>';
@@ -189,14 +203,14 @@ class ICSF_Admin {
             echo '<td><input type="text" name="fields[' . esc_attr((string) $i) . '][required]" value="' . esc_attr($field['required'] ? '1' : '0') . '" /></td>';
             echo '</tr>';
         }
-        for ($n = 0; $n < 5; $n++) {
+        for ($n = 0; $n < 6; $n++) {
             $idx = count($rows) + $n;
             echo '<tr><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][label]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][name]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][type]" value="text" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][placeholder]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][options]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][required]" value="0" /></td></tr>';
         }
-        echo '</tbody></table>';
+        echo '</tbody></table></div>';
 
-        submit_button('Save Form');
-        echo '</form></div>';
+        submit_button('Save Enterprise Form');
+        echo '</form></div></div>';
     }
 
     public function handle_save_form(): void {
@@ -275,19 +289,19 @@ class ICSF_Admin {
         $metrics = $this->analytics->build_metrics($logs);
         $forms = $this->plugin->get_forms();
 
-        echo '<div class="wrap"><h1>Advanced Analytics Command Center</h1>';
-        echo '<div class="icsf-admin-shell"><div class="icsf-cards">';
-        echo '<div class="icsf-card"><h3>Total</h3><p>' . esc_html((string) $metrics['total']) . '</p></div>';
-        echo '<div class="icsf-card"><h3>Success</h3><p>' . esc_html((string) $metrics['success']) . '</p></div>';
-        echo '<div class="icsf-card"><h3>Failed</h3><p>' . esc_html((string) $metrics['failed']) . '</p></div>';
-        echo '<div class="icsf-card"><h3>Success Rate</h3><p>' . esc_html((string) $metrics['success_rate']) . '%</p></div>';
+        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Observability</div><h1 class="icsf-title">Enterprise Analytics Command Center</h1></div><span class="icsf-chip">Live Metrics</span></div>';
+        echo '<div class="icsf-grid">';
+        echo '<div class="icsf-stat"><h3>Total</h3><p>' . esc_html((string) $metrics['total']) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Success</h3><p class="icsf-success">' . esc_html((string) $metrics['success']) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Failed</h3><p class="icsf-danger">' . esc_html((string) $metrics['failed']) . '</p></div>';
+        echo '<div class="icsf-stat"><h3>Success Rate</h3><p>' . esc_html((string) $metrics['success_rate']) . '%</p></div>';
         echo '</div></div>';
 
-        echo '<form method="get" style="margin:12px 0 16px;">';
+        echo '<div class="icsf-panel"><form method="get" style="margin-bottom:16px;">';
         echo '<input type="hidden" name="page" value="ikonic-contact-analytics" />';
         echo '<label>From <input type="date" name="from" value="' . esc_attr($from) . '" /></label> ';
         echo '<label>To <input type="date" name="to" value="' . esc_attr($to) . '" /></label> ';
-        echo '<button class="button">Filter</button>';
+        echo '<button class="button">Filter Window</button>';
         echo '</form>';
 
         echo '<h2>Submissions by Form</h2><table class="widefat striped"><thead><tr><th>Form</th><th>Count</th></tr></thead><tbody>';
@@ -343,7 +357,7 @@ class ICSF_Admin {
         }
         echo '</tbody></table>';
 
-        echo '</div>';
+        echo '</div></div>';
     }
 
     public function handle_export_logs(): void {
