@@ -35,7 +35,7 @@ class ICSF_Admin {
     }
 
     public function enqueue_admin_assets(string $hook): void {
-        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-form-builder_page_ikonic-contact-entries', 'ikonic-form-builder_page_ikonic-contact-analytics', 'ikonic-form-builder_page_ikonic-contact-modules', 'ikonic-form-builder_page_ikonic-contact-smtp-settings'];
+        $allowed = ['toplevel_page_ikonic-contact-form-builder', 'ikonic-contact-form-builder_page_ikonic-contact-entries', 'ikonic-contact-form-builder_page_ikonic-contact-analytics', 'ikonic-contact-form-builder_page_ikonic-contact-modules', 'ikonic-contact-form-builder_page_ikonic-contact-smtp-settings'];
         if (!in_array($hook, $allowed, true)) {
             return;
         }
@@ -94,6 +94,7 @@ class ICSF_Admin {
     public function render_smtp_page(): void {
         $smtp = $this->plugin->get_smtp_settings();
         echo '<div class="wrap">';
+        $this->render_admin_notice();
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Mail Gateway</div><h1 class="icsf-title">SMTP Control Tower</h1></div><span class="icsf-chip">Transport Layer</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>SMTP State</h3><p>' . (!empty($smtp['enable_smtp']) ? 'On' : 'Off') . '</p></div>';
@@ -111,15 +112,29 @@ class ICSF_Admin {
 
     public function render_modules_page(): void {
         $modules = $this->plugin->get_modules();
-        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Platform Orchestration</div><h1 class="icsf-title">UI Studio & Modules</h1></div><span class="icsf-chip">Feature Flags</span></div>';
+        echo '<div class="wrap">';
+        $this->render_admin_notice();
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Platform Orchestration</div><h1 class="icsf-title">UI Studio & Modules</h1></div><span class="icsf-chip">Feature Flags</span></div>';
         echo '<p>Enable enterprise modules for frontend experiences, admin controls, analytics, entries, anti-spam, and automation.</p></div>';
 
         echo '<div class="icsf-panel"><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_modules" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
 
+        $module_help = [
+            'frontend_futuristic_ui' => 'Enable modern frontend styling for all plugin forms.',
+            'frontend_progress_meter' => 'Show completion progress while user fills required fields.',
+            'backend_ui_studio' => 'Enable enhanced admin UI experience.',
+            'analytics_advanced' => 'Collect and surface aggregate submission analytics.',
+            'honeypot' => 'Use hidden anti-spam trap field during submissions.',
+            'entries_manager' => 'Store entries for review/export in admin.',
+            'autoresponder' => 'Allow form-specific auto-reply emails.',
+            'webhook_gateway' => 'Allow webhook delivery to external platforms.',
+        ];
+
         foreach ($modules as $key => $enabled) {
-            echo '<div class="icsf-module"><div><strong>' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</strong><br><span style="color:#65789b;font-size:12px">Module toggle for enterprise behavior</span></div><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> Enabled</label></div>';
+            $help = isset($module_help[$key]) ? $module_help[$key] : 'Module toggle for enterprise behavior.';
+            echo '<div class="icsf-module"><div><strong>' . esc_html(ucwords(str_replace('_', ' ', $key))) . '</strong><br><span style="color:#65789b;font-size:12px">' . esc_html($help) . '</span></div><label><input type="checkbox" name="modules[' . esc_attr($key) . ']" value="1" ' . checked(!empty($enabled), true, false) . ' /> Enabled</label></div>';
         }
 
         submit_button('Save Module Matrix');
@@ -133,6 +148,7 @@ class ICSF_Admin {
         $active = wp_parse_args($active, $this->plugin->default_form());
 
         echo '<div class="wrap">';
+        $this->render_admin_notice();
         echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Enterprise Builder</div><h1 class="icsf-title">Forms Studio</h1></div><span class="icsf-chip">v7 Enterprise</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>Total Forms</h3><p>' . esc_html((string) count($forms)) . '</p></div>';
@@ -185,6 +201,7 @@ class ICSF_Admin {
 
         echo '<div id="icsf-submit" class="icsf-section"><h3>Submission behavior</h3><p class="icsf-help">Choose what users see after successful submission.</p><table class="form-table">';
         echo '<tr><th>Success Message</th><td><input type="text" class="regular-text" name="success_message" value="' . esc_attr($active['success_message']) . '" /></td></tr>';
+        echo '<tr><th>Error Message</th><td><input type="text" class="regular-text" name="error_message" value="' . esc_attr($active['error_message']) . '" /></td></tr>';
         echo '<tr><th>Submit Action</th><td><select name="submit_action"><option value="message" ' . selected($active['submit_action'], 'message', false) . '>Show Message</option><option value="redirect" ' . selected($active['submit_action'], 'redirect', false) . '>Redirect</option></select></td></tr>';
         echo '<tr><th>Redirect URL</th><td><input type="url" class="regular-text" name="redirect_url" value="' . esc_attr($active['redirect_url']) . '" /><p class="description">Only used when action is Redirect.</p></td></tr>';
         echo '</table></div>';
@@ -272,7 +289,7 @@ class ICSF_Admin {
 
         $name = isset($_POST['form_name']) ? sanitize_text_field(wp_unslash($_POST['form_name'])) : '';
         if ($name === '') {
-            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder'));
+            wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&icsf_notice=invalid_form'));
             exit;
         }
 
@@ -308,6 +325,7 @@ class ICSF_Admin {
             'to_email' => isset($_POST['to_email']) ? sanitize_email(wp_unslash($_POST['to_email'])) : '',
             'subject_prefix' => isset($_POST['subject_prefix']) ? sanitize_text_field(wp_unslash($_POST['subject_prefix'])) : '[Contact Form]',
             'success_message' => isset($_POST['success_message']) ? sanitize_text_field(wp_unslash($_POST['success_message'])) : 'Thanks! Your message has been sent.',
+            'error_message' => isset($_POST['error_message']) ? sanitize_text_field(wp_unslash($_POST['error_message'])) : 'Sorry, we could not send your message. Please try again.',
             'theme' => isset($_POST['theme']) ? sanitize_key(wp_unslash($_POST['theme'])) : 'neo-glass',
             'button_text' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : 'Transmit Message',
             'layout' => isset($_POST['layout']) ? sanitize_key(wp_unslash($_POST['layout'])) : 'grid',
@@ -331,7 +349,7 @@ class ICSF_Admin {
         $forms[$id] = wp_parse_args($forms[$id], $this->plugin->default_form());
 
         $this->plugin->save_forms($forms);
-        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($id)));
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($id) . '&icsf_notice=saved'));
         exit;
     }
 
@@ -356,7 +374,7 @@ class ICSF_Admin {
         $forms[$new_id] = $copy;
         $this->plugin->save_forms($forms);
 
-        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($new_id)));
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&form_id=' . rawurlencode($new_id) . '&icsf_notice=duplicated'));
         exit;
     }
 
@@ -370,7 +388,7 @@ class ICSF_Admin {
         unset($forms[$id]);
         $this->plugin->save_forms($forms);
 
-        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder'));
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-form-builder&icsf_notice=deleted'));
         exit;
     }
 
@@ -382,7 +400,9 @@ class ICSF_Admin {
         $metrics = $this->analytics->build_metrics($logs);
         $forms = $this->plugin->get_forms();
 
-        echo '<div class="wrap"><div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Observability</div><h1 class="icsf-title">Enterprise Analytics Command Center</h1></div><span class="icsf-chip">Live Metrics</span></div>';
+        echo '<div class="wrap">';
+        $this->render_admin_notice();
+        echo '<div class="icsf-enterprise"><div class="icsf-toolbar"><div><div class="icsf-kicker">Observability</div><h1 class="icsf-title">Enterprise Analytics Command Center</h1></div><span class="icsf-chip">Live Metrics</span></div>';
         echo '<div class="icsf-grid">';
         echo '<div class="icsf-stat"><h3>Total</h3><p>' . esc_html((string) $metrics['total']) . '</p></div>';
         echo '<div class="icsf-stat"><h3>Success</h3><p class="icsf-success">' . esc_html((string) $metrics['success']) . '</p></div>';
@@ -496,8 +516,30 @@ class ICSF_Admin {
         }
 
         $this->plugin->save_modules($updated);
-        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-modules'));
+        wp_safe_redirect(admin_url('admin.php?page=ikonic-contact-modules&icsf_notice=modules_saved'));
         exit;
+    }
+
+
+    private function render_admin_notice(): void {
+        $notice = isset($_GET['icsf_notice']) ? sanitize_key(wp_unslash($_GET['icsf_notice'])) : '';
+        if ($notice === '') {
+            return;
+        }
+
+        $messages = [
+            'saved' => ['text' => 'Form configuration saved successfully.', 'class' => 'notice-success'],
+            'duplicated' => ['text' => 'Form duplicated successfully.', 'class' => 'notice-success'],
+            'deleted' => ['text' => 'Form deleted successfully.', 'class' => 'notice-success'],
+            'modules_saved' => ['text' => 'Module settings updated successfully.', 'class' => 'notice-success'],
+            'invalid_form' => ['text' => 'Please provide a form name before saving.', 'class' => 'notice-error'],
+        ];
+
+        if (!isset($messages[$notice])) {
+            return;
+        }
+
+        echo '<div class="notice ' . esc_attr($messages[$notice]['class']) . ' is-dismissible"><p>' . esc_html($messages[$notice]['text']) . '</p></div>';
     }
 
     private function generate_unique_form_id(string $base, array $forms): string {

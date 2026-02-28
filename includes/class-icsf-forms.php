@@ -107,7 +107,7 @@ class ICSF_Forms {
             $status = sanitize_text_field(wp_unslash($_GET['icsf_status']));
             $notice = $status === 'success'
                 ? '<p style="color:#15b86a;font-weight:600;">' . esc_html($form['success_message']) . '</p>'
-                : '<p style="color:#ff5a5f;font-weight:600;">' . esc_html__('There was an issue sending your message.', 'ikonic-contact-smtp-form') . '</p>';
+                : '<p style="color:#ff5a5f;font-weight:600;">' . esc_html((string) $form['error_message']) . '</p>';
         }
 
         $modules = $this->plugin->get_modules();
@@ -115,7 +115,7 @@ class ICSF_Forms {
         ob_start();
         echo $notice;
         echo '<div class="icsf-wrap icsf-theme-' . esc_attr($form['theme']) . '">';
-        echo '<form method="post">';
+        echo '<form method="post" action="' . esc_url(remove_query_arg(['icsf_status', 'icsf_form_id'])) . '">';
         if (!empty($modules['frontend_progress_meter'])) {
             echo '<div class="icsf-progress"><div class="icsf-progress-bar" style="width:0%"></div></div>';
         }

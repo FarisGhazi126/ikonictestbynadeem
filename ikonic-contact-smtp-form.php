@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ikonic Contact SMTP Form
  * Description: Advanced contact form builder with SMTP delivery, analytics, and modular OOP architecture.
- * Version: 7.1.0
+ * Version: 7.2.0
  * Author: Ikonic
  * Text Domain: ikonic-contact-smtp-form
  */
@@ -19,6 +19,8 @@ require_once ICSF_PLUGIN_DIR . 'includes/class-icsf-plugin.php';
 require_once ICSF_PLUGIN_DIR . 'includes/class-icsf-admin.php';
 require_once ICSF_PLUGIN_DIR . 'includes/class-icsf-forms.php';
 require_once ICSF_PLUGIN_DIR . 'includes/class-icsf-analytics.php';
+
+register_activation_hook(ICSF_PLUGIN_FILE, ['ICSF_Plugin', 'activate']);
 
 $icsf_plugin = new ICSF_Plugin();
 $icsf_analytics = new ICSF_Analytics($icsf_plugin);

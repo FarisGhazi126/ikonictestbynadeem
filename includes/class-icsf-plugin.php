@@ -16,13 +16,66 @@ class ICSF_Plugin {
         add_action('phpmailer_init', [$this, 'configure_phpmailer']);
     }
 
+    public static function activate(): void {
+        $instance = new self();
+
+        if (get_option(self::SMTP_OPTION_KEY, null) === null) {
+            add_option(self::SMTP_OPTION_KEY, $instance->default_smtp_settings());
+        }
+
+        if (get_option(self::MODULES_OPTION_KEY, null) === null) {
+            add_option(self::MODULES_OPTION_KEY, $instance->default_modules());
+        }
+
+        if (get_option(self::FORMS_OPTION_KEY, null) === null) {
+            add_option(self::FORMS_OPTION_KEY, []);
+        }
+
+        if (get_option(self::LOGS_OPTION_KEY, null) === null) {
+            add_option(self::LOGS_OPTION_KEY, []);
+        }
+    }
+
     public function get_forms(): array {
         $forms = get_option(self::FORMS_OPTION_KEY, []);
-        return is_array($forms) ? $forms : [];
+        if (!is_array($forms)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($forms as $id => $form) {
+            if (!is_array($form)) {
+                continue;
+            }
+
+            $form['id'] = isset($form['id']) ? sanitize_key((string) $form['id']) : sanitize_key((string) $id);
+            if ($form['id'] === '') {
+                continue;
+            }
+
+            $normalized[$form['id']] = $this->normalize_form($form);
+        }
+
+        return $normalized;
     }
 
     public function save_forms(array $forms): void {
-        update_option(self::FORMS_OPTION_KEY, $forms);
+        $clean = [];
+        foreach ($forms as $id => $form) {
+            if (!is_array($form)) {
+                continue;
+            }
+
+            $candidate = isset($form['id']) ? sanitize_key((string) $form['id']) : sanitize_key((string) $id);
+            if ($candidate === '') {
+                continue;
+            }
+
+            $form['id'] = $candidate;
+            $clean[$candidate] = $this->normalize_form($form);
+        }
+
+        update_option(self::FORMS_OPTION_KEY, $clean, false);
     }
 
     public function get_logs(): array {
@@ -36,6 +89,7 @@ class ICSF_Plugin {
         if (count($logs) > 5000) {
             $logs = array_slice($logs, -5000);
         }
+
         update_option(self::LOGS_OPTION_KEY, $logs, false);
     }
 
@@ -53,7 +107,13 @@ class ICSF_Plugin {
 
     public function sanitize_smtp_settings(array $input): array {
         $defaults = $this->default_smtp_settings();
+        $current = $this->get_smtp_settings();
         $secure = isset($input['smtp_secure']) ? strtolower(sanitize_text_field((string) $input['smtp_secure'])) : 'tls';
+
+        $password = isset($input['smtp_password']) ? sanitize_text_field((string) $input['smtp_password']) : '';
+        if ($password === '') {
+            $password = (string) ($current['smtp_password'] ?? '');
+        }
 
         return [
             'to_email' => isset($input['to_email']) ? sanitize_email((string) $input['to_email']) : $defaults['to_email'],
@@ -61,9 +121,9 @@ class ICSF_Plugin {
             'from_email' => isset($input['from_email']) ? sanitize_email((string) $input['from_email']) : $defaults['from_email'],
             'enable_smtp' => !empty($input['enable_smtp']) ? 1 : 0,
             'smtp_host' => isset($input['smtp_host']) ? sanitize_text_field((string) $input['smtp_host']) : '',
-            'smtp_port' => isset($input['smtp_port']) ? absint($input['smtp_port']) : 587,
+            'smtp_port' => isset($input['smtp_port']) ? max(1, absint($input['smtp_port'])) : 587,
             'smtp_username' => isset($input['smtp_username']) ? sanitize_text_field((string) $input['smtp_username']) : '',
-            'smtp_password' => isset($input['smtp_password']) ? sanitize_text_field((string) $input['smtp_password']) : '',
+            'smtp_password' => $password,
             'smtp_secure' => in_array($secure, ['tls', 'ssl', 'none'], true) ? $secure : 'tls',
         ];
     }
@@ -76,6 +136,7 @@ class ICSF_Plugin {
             'to_email' => '',
             'subject_prefix' => '[Contact Form]',
             'success_message' => 'Thanks! Your message has been sent.',
+            'error_message' => 'Sorry, we could not send your message. Please try again.',
             'theme' => 'neo-glass',
             'button_text' => 'Transmit Message',
             'layout' => 'grid',
@@ -129,26 +190,101 @@ class ICSF_Plugin {
         }
 
         $phpmailer->isSMTP();
-        $phpmailer->Host = $smtp['smtp_host'];
+        $phpmailer->Host = (string) $smtp['smtp_host'];
         $phpmailer->Port = (int) $smtp['smtp_port'];
         $phpmailer->SMTPAuth = !empty($smtp['smtp_username']);
+        $phpmailer->SMTPAutoTLS = true;
 
         if (!empty($smtp['smtp_username'])) {
-            $phpmailer->Username = $smtp['smtp_username'];
-            $phpmailer->Password = $smtp['smtp_password'];
+            $phpmailer->Username = (string) $smtp['smtp_username'];
+            $phpmailer->Password = (string) $smtp['smtp_password'];
         }
 
         if (($smtp['smtp_secure'] ?? 'tls') !== 'none') {
-            $phpmailer->SMTPSecure = $smtp['smtp_secure'];
+            $phpmailer->SMTPSecure = (string) $smtp['smtp_secure'];
         }
 
         if (!empty($smtp['from_email'])) {
-            $phpmailer->From = $smtp['from_email'];
+            $phpmailer->From = (string) $smtp['from_email'];
         }
 
         if (!empty($smtp['from_name'])) {
-            $phpmailer->FromName = $smtp['from_name'];
+            $phpmailer->FromName = (string) $smtp['from_name'];
         }
+    }
+
+    private function normalize_form(array $form): array {
+        $defaults = $this->default_form();
+        $form = wp_parse_args($form, $defaults);
+
+        $status = sanitize_key((string) $form['status']);
+        $layout = sanitize_key((string) $form['layout']);
+        $submit_action = sanitize_key((string) $form['submit_action']);
+        $theme = sanitize_key((string) $form['theme']);
+
+        $form['id'] = sanitize_key((string) $form['id']);
+        $form['name'] = sanitize_text_field((string) $form['name']);
+        $form['status'] = in_array($status, ['active', 'inactive'], true) ? $status : 'active';
+        $form['to_email'] = sanitize_email((string) $form['to_email']);
+        $form['subject_prefix'] = sanitize_text_field((string) $form['subject_prefix']);
+        $form['success_message'] = sanitize_text_field((string) $form['success_message']);
+        $form['error_message'] = sanitize_text_field((string) $form['error_message']);
+        $form['theme'] = array_key_exists($theme, $this->theme_options()) ? $theme : $defaults['theme'];
+        $form['button_text'] = sanitize_text_field((string) $form['button_text']);
+        $form['layout'] = in_array($layout, ['grid', 'single'], true) ? $layout : 'grid';
+        $form['enable_honeypot'] = !empty($form['enable_honeypot']) ? 1 : 0;
+        $form['max_submissions_per_hour'] = max(1, absint($form['max_submissions_per_hour']));
+        $form['submit_action'] = in_array($submit_action, ['message', 'redirect'], true) ? $submit_action : 'message';
+        $form['redirect_url'] = esc_url_raw((string) $form['redirect_url']);
+        $form['store_entries'] = !empty($form['store_entries']) ? 1 : 0;
+        $form['admin_notify_enabled'] = !empty($form['admin_notify_enabled']) ? 1 : 0;
+        $form['admin_subject_template'] = sanitize_text_field((string) $form['admin_subject_template']);
+        $form['admin_body_template'] = sanitize_textarea_field((string) $form['admin_body_template']);
+        $form['autoresponder_enabled'] = !empty($form['autoresponder_enabled']) ? 1 : 0;
+        $form['autoresponder_email_field'] = sanitize_key((string) $form['autoresponder_email_field']);
+        $form['autoresponder_subject'] = sanitize_text_field((string) $form['autoresponder_subject']);
+        $form['autoresponder_body'] = sanitize_textarea_field((string) $form['autoresponder_body']);
+        $form['webhook_enabled'] = !empty($form['webhook_enabled']) ? 1 : 0;
+        $form['webhook_url'] = esc_url_raw((string) $form['webhook_url']);
+
+        $clean_fields = [];
+        foreach ((array) $form['fields'] as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $label = sanitize_text_field((string) ($field['label'] ?? ''));
+            $name = sanitize_key((string) ($field['name'] ?? ''));
+            if ($label === '' || $name === '') {
+                continue;
+            }
+
+            $type = sanitize_key((string) ($field['type'] ?? 'text'));
+            if (!in_array($type, ['text', 'email', 'textarea', 'select', 'radio', 'checkbox', 'tel', 'number', 'date', 'url'], true)) {
+                $type = 'text';
+            }
+
+            $options = [];
+            foreach ((array) ($field['options'] ?? []) as $option) {
+                $opt = sanitize_text_field((string) $option);
+                if ($opt !== '') {
+                    $options[] = $opt;
+                }
+            }
+
+            $clean_fields[] = [
+                'label' => $label,
+                'name' => $name,
+                'type' => $type,
+                'required' => !empty($field['required']) ? 1 : 0,
+                'placeholder' => sanitize_text_field((string) ($field['placeholder'] ?? '')),
+                'options' => $options,
+            ];
+        }
+
+        $form['fields'] = !empty($clean_fields) ? $clean_fields : $defaults['fields'];
+
+        return $form;
     }
 
     private function default_modules(): array {
