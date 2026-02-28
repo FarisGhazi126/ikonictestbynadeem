@@ -41,6 +41,7 @@ class ICSF_Admin {
         }
 
         $css = '.icsf-enterprise{--bg:#0d1633;--bg2:#121f46;--ink:#eaf2ff;--muted:#adc3ea;--line:#324d88;--card:rgba(12,24,58,.88);background:linear-gradient(145deg,var(--bg),var(--bg2));color:var(--ink);padding:20px;border-radius:16px;margin:14px 0;border:1px solid rgba(139,169,241,.25);overflow:hidden}.icsf-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.icsf-enterprise .icsf-title{font-size:26px;font-weight:700;margin:0;color:#f4f8ff !important}.icsf-kicker{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.icsf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.icsf-stat{background:var(--card);border:1px solid var(--line);padding:14px;border-radius:12px}.icsf-stat h3{margin:0 0 6px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}.icsf-stat p{margin:0;font-size:26px;font-weight:700;color:#f4f8ff}.icsf-panel{background:#fff;border:1px solid #e3e9f5;border-radius:12px;padding:14px;margin-top:14px}.icsf-panel h2{margin-top:0}.icsf-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#edf3ff;color:#244f9f}.icsf-module{padding:12px;border:1px solid #dce4f3;border-radius:10px;background:#fff;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}.icsf-form-shell input[type=text],.icsf-form-shell input[type=email],.icsf-form-shell input[type=url],.icsf-form-shell select{min-width:260px}.icsf-table{overflow:auto}.icsf-table table{min-width:1080px}.icsf-success{color:#0f9960}.icsf-danger{color:#d14343}.icsf-enterprise .notice,.icsf-enterprise .updated,.icsf-enterprise .error{background:#fff;color:#1d2327;border-left:4px solid #2271b1;margin:10px 0;border-radius:6px}.icsf-code{font-family:ui-monospace,Menlo,monospace;background:#f2f6ff;border:1px solid #d8e1f5;border-radius:8px;padding:8px}';
+        $css .= '.icsf-help{color:#5f6b85;margin:4px 0 0}.icsf-builder-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.icsf-builder-nav a{text-decoration:none;padding:6px 10px;border-radius:999px;background:#eef3ff;border:1px solid #d8e3fb;color:#1d4a9e;font-weight:600}.icsf-section{border:1px solid #e7ecf7;border-radius:10px;padding:14px;margin-bottom:14px;background:#fcfdff}.icsf-section h3{margin-top:0;margin-bottom:6px}.icsf-section .form-table{margin-top:6px}.icsf-field-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-top:8px}.icsf-field-types span{background:#fff;border:1px solid #dbe5f8;border-radius:8px;padding:6px 8px;font-size:12px;text-align:center}';
         wp_register_style('icsf-admin-inline', false);
         wp_enqueue_style('icsf-admin-inline');
         wp_add_inline_style('icsf-admin-inline', $css);
@@ -160,15 +161,16 @@ class ICSF_Admin {
         }
         echo '</tbody></table></div></div>';
 
-        echo '<div class="icsf-panel icsf-form-shell"><h2>Enterprise Form Builder</h2>';
+        echo '<div class="icsf-panel icsf-form-shell"><h2>Enterprise Form Builder</h2><p class="icsf-help">All options are grouped by workflow so teams can configure forms faster and with less confusion.</p>';
+        echo '<div class="icsf-builder-nav"><a href="#icsf-core">Core setup</a><a href="#icsf-submit">Submission behavior</a><a href="#icsf-admin-notify">Admin notifications</a><a href="#icsf-automation">Automation</a><a href="#icsf-fields">Field matrix</a></div>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="icsf_save_form" />';
         echo '<input type="hidden" name="original_form_id" value="' . esc_attr($edit_id) . '" />';
         wp_nonce_field(ICSF_Plugin::ADMIN_NONCE_ACTION, 'icsf_admin_nonce');
 
-        echo '<h3>Core</h3><table class="form-table">';
-        echo '<tr><th>Form Name</th><td><input type="text" class="regular-text" name="form_name" value="' . esc_attr($active['name']) . '" required /></td></tr>';
-        echo '<tr><th>Form ID</th><td><input type="text" class="regular-text" name="form_id" value="' . esc_attr($active['id']) . '" /></td></tr>';
+        echo '<div id="icsf-core" class="icsf-section"><h3>Core setup</h3><p class="icsf-help">Define identity, appearance and spam/rate controls.</p><table class="form-table">';
+        echo '<tr><th>Form Name</th><td><input type="text" class="regular-text" name="form_name" value="' . esc_attr($active['name']) . '" required /><p class="description">Human readable name shown in the form registry.</p></td></tr>';
+        echo '<tr><th>Form ID</th><td><input type="text" class="regular-text" name="form_id" value="' . esc_attr($active['id']) . '" /><p class="description">Used in shortcode: <code>[ikonic_contact_form id="form-id"]</code>.</p></td></tr>';
         echo '<tr><th>Status</th><td><select name="status"><option value="active" ' . selected($active['status'], 'active', false) . '>Active</option><option value="inactive" ' . selected($active['status'], 'inactive', false) . '>Inactive</option></select></td></tr>';
         echo '<tr><th>Theme</th><td><select name="theme">';
         foreach ($this->plugin->theme_options() as $key => $label) {
@@ -178,37 +180,35 @@ class ICSF_Admin {
         echo '<tr><th>Layout</th><td><select name="layout"><option value="grid" ' . selected($active['layout'], 'grid', false) . '>Grid</option><option value="single" ' . selected($active['layout'], 'single', false) . '>Single Column</option></select></td></tr>';
         echo '<tr><th>Button Text</th><td><input type="text" class="regular-text" name="button_text" value="' . esc_attr($active['button_text']) . '" /></td></tr>';
         echo '<tr><th>Enable Honeypot</th><td><label><input type="checkbox" name="enable_honeypot" value="1" ' . checked(!empty($active['enable_honeypot']), true, false) . ' /> Anti-spam trap</label></td></tr>';
-        echo '<tr><th>Max submissions/hour per IP</th><td><input type="number" min="1" max="1000" name="max_submissions_per_hour" value="' . esc_attr((string) $active['max_submissions_per_hour']) . '" /></td></tr>';
-        echo '</table>';
+        echo '<tr><th>Max submissions/hour per IP</th><td><input type="number" min="1" max="1000" name="max_submissions_per_hour" value="' . esc_attr((string) $active['max_submissions_per_hour']) . '" /><p class="description">Leave as default unless expecting high traffic.</p></td></tr>';
+        echo '</table></div>';
 
-        echo '<h3>Submission Behavior</h3><table class="form-table">';
+        echo '<div id="icsf-submit" class="icsf-section"><h3>Submission behavior</h3><p class="icsf-help">Choose what users see after successful submission.</p><table class="form-table">';
         echo '<tr><th>Success Message</th><td><input type="text" class="regular-text" name="success_message" value="' . esc_attr($active['success_message']) . '" /></td></tr>';
         echo '<tr><th>Submit Action</th><td><select name="submit_action"><option value="message" ' . selected($active['submit_action'], 'message', false) . '>Show Message</option><option value="redirect" ' . selected($active['submit_action'], 'redirect', false) . '>Redirect</option></select></td></tr>';
-        echo '<tr><th>Redirect URL</th><td><input type="url" class="regular-text" name="redirect_url" value="' . esc_attr($active['redirect_url']) . '" /></td></tr>';
-        echo '</table>';
+        echo '<tr><th>Redirect URL</th><td><input type="url" class="regular-text" name="redirect_url" value="' . esc_attr($active['redirect_url']) . '" /><p class="description">Only used when action is Redirect.</p></td></tr>';
+        echo '</table></div>';
 
-        echo '<h3>Admin Notification</h3><table class="form-table">';
+        echo '<div id="icsf-admin-notify" class="icsf-section"><h3>Admin notifications & storage</h3><p class="icsf-help">Control who receives submissions and whether entries are retained.</p><table class="form-table">';
         echo '<tr><th>Recipient Email</th><td><input type="email" class="regular-text" name="to_email" value="' . esc_attr($active['to_email']) . '" /></td></tr>';
         echo '<tr><th>Enable Admin Notify</th><td><label><input type="checkbox" name="admin_notify_enabled" value="1" ' . checked(!empty($active['admin_notify_enabled']), true, false) . ' /> Send email to admin</label></td></tr>';
         echo '<tr><th>Subject Prefix</th><td><input type="text" class="regular-text" name="subject_prefix" value="' . esc_attr($active['subject_prefix']) . '" /></td></tr>';
-        echo '<tr><th>Subject Template</th><td><input type="text" class="regular-text" name="admin_subject_template" value="' . esc_attr($active['admin_subject_template']) . '" /></td></tr>';
+        echo '<tr><th>Subject Template</th><td><input type="text" class="regular-text" name="admin_subject_template" value="' . esc_attr($active['admin_subject_template']) . '" /><p class="description">Tokens: {form_name}, {site_name}, {field_name}</p></td></tr>';
         echo '<tr><th>Body Template</th><td><textarea name="admin_body_template" rows="5" class="large-text">' . esc_textarea($active['admin_body_template']) . '</textarea><p class="description">Tokens: {form_name}, {fields}, {site_name}, {field_name}</p></td></tr>';
         echo '<tr><th>Store Entries</th><td><label><input type="checkbox" name="store_entries" value="1" ' . checked(!empty($active['store_entries']), true, false) . ' /> Keep records in Entries/Analytics</label></td></tr>';
-        echo '</table>';
+        echo '</table></div>';
 
-        echo '<h3>Automation Hooks</h3><table class="form-table">';
+        echo '<div id="icsf-automation" class="icsf-section"><h3>Automation</h3><p class="icsf-help">Send submissions to external systems and user inboxes.</p><table class="form-table">';
         echo '<tr><th>Enable Webhook</th><td><label><input type="checkbox" name="webhook_enabled" value="1" ' . checked(!empty($active['webhook_enabled']), true, false) . ' /> Send JSON payload to webhook</label></td></tr>';
         echo '<tr><th>Webhook URL</th><td><input type="url" class="regular-text" name="webhook_url" value="' . esc_attr($active['webhook_url']) . '" /></td></tr>';
-
-        echo '<h3>Auto-responder</h3><table class="form-table">';
         echo '<tr><th>Enable Auto-responder</th><td><label><input type="checkbox" name="autoresponder_enabled" value="1" ' . checked(!empty($active['autoresponder_enabled']), true, false) . ' /> Send confirmation to user</label></td></tr>';
-        echo '<tr><th>User Email Field Name</th><td><input type="text" class="regular-text" name="autoresponder_email_field" value="' . esc_attr($active['autoresponder_email_field']) . '" /></td></tr>';
+        echo '<tr><th>User Email Field Name</th><td><input type="text" class="regular-text" name="autoresponder_email_field" value="' . esc_attr($active['autoresponder_email_field']) . '" /><p class="description">Use a field name from Field Matrix (e.g. email).</p></td></tr>';
         echo '<tr><th>Auto-responder Subject</th><td><input type="text" class="regular-text" name="autoresponder_subject" value="' . esc_attr($active['autoresponder_subject']) . '" /></td></tr>';
         echo '<tr><th>Auto-responder Body</th><td><textarea name="autoresponder_body" rows="5" class="large-text">' . esc_textarea($active['autoresponder_body']) . '</textarea></td></tr>';
-        echo '</table>';
+        echo '</table></div>';
 
-        echo '<h3>Field Matrix</h3>';
-        echo '<div class="icsf-code">Supported types: text, email, textarea, select, radio, checkbox, tel, number, date, url</div>';
+        echo '<div id="icsf-fields" class="icsf-section"><h3>Field Matrix</h3><p class="icsf-help">Create form fields. Names should be unique and lowercase-friendly.</p>';
+        echo '<div class="icsf-code">Supported types:</div><div class="icsf-field-types"><span>text</span><span>email</span><span>textarea</span><span>select</span><span>radio</span><span>checkbox</span><span>tel</span><span>number</span><span>date</span><span>url</span></div>';
         echo '<div class="icsf-table"><table class="widefat striped"><thead><tr><th>Label</th><th>Name</th><th>Type</th><th>Placeholder</th><th>Options (csv)</th><th>Required (1/0)</th></tr></thead><tbody>';
         $rows = !empty($active['fields']) ? $active['fields'] : $this->plugin->default_form()['fields'];
         foreach ($rows as $i => $field) {
@@ -225,9 +225,9 @@ class ICSF_Admin {
             $idx = count($rows) + $n;
             echo '<tr><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][label]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][name]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][type]" value="text" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][placeholder]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][options]" /></td><td><input type="text" name="fields[' . esc_attr((string) $idx) . '][required]" value="0" /></td></tr>';
         }
-        echo '</tbody></table></div>';
+        echo '</tbody></table></div></div>';
 
-        submit_button('Save Enterprise Form');
+        submit_button('Save Form Configuration');
         echo '</form></div></div>';
     }
 
