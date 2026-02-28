@@ -13,11 +13,29 @@ class ICSF_Marketing_Engine {
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('icsf_after_submission', [$this, 'capture_submission'], 10, 3);
+        add_filter('cron_schedules', [$this, 'register_cron_schedules']);
+        add_action('icsf_process_email_queue', [$this, 'process_email_queue']);
     }
 
     public static function activate(): void {
         self::create_tables();
         self::register_capabilities();
+        self::schedule_events();
+    }
+
+
+
+    public static function deactivate(): void {
+        $next = wp_next_scheduled('icsf_process_email_queue');
+        if ($next) {
+            wp_unschedule_event($next, 'icsf_process_email_queue');
+        }
+    }
+
+    public static function schedule_events(): void {
+        if (!wp_next_scheduled('icsf_process_email_queue')) {
+            wp_schedule_event(time() + 120, 'icsf_five_minutes', 'icsf_process_email_queue');
+        }
     }
 
     public static function create_tables(): void {
@@ -258,6 +276,15 @@ class ICSF_Marketing_Engine {
             },
             'callback' => [$this, 'rest_upsert_contact'],
         ]);
+ 
+
+        register_rest_route('icsf/v1', '/campaigns/queue', [
+            'methods' => 'POST',
+            'permission_callback' => function (): bool {
+                return current_user_can('manage_campaigns') || current_user_can('manage_options');
+            },
+            'callback' => [$this, 'rest_queue_campaign'],
+        ]);
     }
 
     public function rest_list_contacts(WP_REST_Request $request): WP_REST_Response {
@@ -304,6 +331,114 @@ class ICSF_Marketing_Engine {
         ]);
 
         return new WP_REST_Response(['id' => $id], 200);
+    }
+
+    public function rest_queue_campaign(WP_REST_Request $request): WP_REST_Response {
+        global $wpdb;
+
+        $subject = sanitize_text_field((string) $request->get_param('subject'));
+        $html = wp_kses_post((string) $request->get_param('content_html'));
+        $status_filter = sanitize_key((string) ($request->get_param('status') ?: 'active'));
+        $limit = min(1000, max(1, absint($request->get_param('limit') ?: 200)));
+
+        if ($subject === '' || $html === '') {
+            return new WP_REST_Response(['message' => 'Subject and content_html are required'], 400);
+        }
+
+        $contacts_table = $this->table('contacts');
+        $contacts = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$contacts_table} WHERE status = %s ORDER BY id DESC LIMIT %d", $status_filter, $limit), ARRAY_A);
+
+        $queued = 0;
+        foreach ($contacts as $c) {
+            $this->queue_contact_email(absint($c['id']), $subject, $html);
+            $queued++;
+        }
+
+        return new WP_REST_Response(['queued' => $queued], 200);
+    }
+
+
+
+    public function register_cron_schedules(array $schedules): array {
+        if (!isset($schedules['icsf_five_minutes'])) {
+            $schedules['icsf_five_minutes'] = [
+                'interval' => 300,
+                'display' => 'Every 5 Minutes (ICSF)',
+            ];
+        }
+
+        return $schedules;
+    }
+
+    public function process_email_queue(): void {
+        global $wpdb;
+
+        $table = $this->table('email_queue');
+        $contacts_table = $this->table('contacts');
+        $now = current_time('mysql');
+
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table} WHERE status = %s AND run_at <= %s ORDER BY id ASC LIMIT 25", 'queued', $now), ARRAY_A);
+        if (empty($rows)) {
+            return;
+        }
+
+        $admin_email = get_option('admin_email');
+
+        foreach ($rows as $row) {
+            $contact_id = isset($row['contact_id']) ? absint($row['contact_id']) : 0;
+            $contact = $contact_id > 0 ? $wpdb->get_row($wpdb->prepare("SELECT email,status FROM {$contacts_table} WHERE id=%d", $contact_id), ARRAY_A) : null;
+            if (!$contact || empty($contact['email']) || ($contact['status'] ?? 'active') !== 'active') {
+                $wpdb->update($table, ['status' => 'failed'], ['id' => absint($row['id'])], ['%s'], ['%d']);
+                continue;
+            }
+
+            $payload = maybe_unserialize((string) ($row['payload'] ?? ''));
+            if (!is_array($payload)) {
+                $payload = [];
+            }
+
+            $subject = isset($payload['subject']) ? sanitize_text_field((string) $payload['subject']) : 'Marketing Update';
+            $body = isset($payload['html']) ? wp_kses_post((string) $payload['html']) : '';
+            if ($body === '') {
+                $body = '<p>Hello,</p><p>You have a new message.</p>';
+            }
+
+            $headers = ['Content-Type: text/html; charset=UTF-8'];
+            if (is_email($admin_email)) {
+                $headers[] = 'From: ' . get_bloginfo('name') . ' <' . $admin_email . '>';
+            }
+
+            $sent = wp_mail(sanitize_email((string) $contact['email']), $subject, $body, $headers);
+            if ($sent) {
+                $wpdb->update($table, ['status' => 'sent'], ['id' => absint($row['id'])], ['%s'], ['%d']);
+                $this->log_activity($contact_id, 'campaign_email_sent', isset($row['campaign_id']) ? absint($row['campaign_id']) : 0);
+            } else {
+                $wpdb->update($table, ['status' => 'failed'], ['id' => absint($row['id'])], ['%s'], ['%d']);
+            }
+        }
+    }
+
+    private function queue_contact_email(int $contact_id, string $subject, string $html, int $campaign_id = 0, int $automation_id = 0, int $delay_minutes = 0): void {
+        if ($contact_id <= 0) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $this->table('email_queue');
+
+        $run_at = gmdate('Y-m-d H:i:s', time() + max(0, $delay_minutes) * 60);
+        $wpdb->insert($table, [
+            'campaign_id' => $campaign_id,
+            'automation_id' => $automation_id,
+            'contact_id' => $contact_id,
+            'payload' => maybe_serialize([
+                'subject' => $subject,
+                'html' => $html,
+            ]),
+            'status' => 'queued',
+            'run_at' => get_date_from_gmt($run_at),
+            'created_at' => current_time('mysql'),
+        ], ['%d', '%d', '%d', '%s', '%s', '%s', '%s']);
     }
 
     public function render_contacts_page(): void {
